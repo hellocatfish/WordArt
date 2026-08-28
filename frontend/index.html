@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordArt 文字画 · 用你想说的话,拼出你爱的图</title>
+  <meta name="description" content="上传图片,输入一句话,生成由这句话拼成的字符画。导出 PNG/PDF 打印即礼物。图片全程本地处理,绝不上传。" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+</head>
+<body>
+  <header class="site-header container">
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true">文</div>
+      <div class="brand-text">
+        <h1>WordArt <span class="zh-sub">文字画</span></h1>
+        <p class="tagline">用你想说的话,拼出你爱的图</p>
+      </div>
+    </div>
+    <div class="privacy-badge" title="图片只在你自己的浏览器里处理">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      图片本地处理 · 不上传
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ============ 工作区 ============ -->
+    <section class="studio">
+      <!-- 预览区 -->
+      <div class="card preview-pane">
+        <div class="preview-head">
+          <div class="status" id="status-line">等待上传图片</div>
+          <div class="preview-tools">
+            <button class="btn ghost small" id="btn-file">选择图片</button>
+            <span class="chips">
+              试试:
+              <button class="chip" data-sample="sphere">球体</button>
+              <button class="chip" data-sample="heart">心形</button>
+              <button class="chip" data-sample="avatar">卡通头像</button>
+              <button class="chip" data-sample="logo">Logo</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="preview-stage" id="preview-stage">
+          <input type="file" id="file-input" accept="image/*" hidden />
+          <div class="dropzone-empty" id="drop-empty">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.8" cy="8.8" r="1.9"/><path d="M21 15.2l-4.6-4.6a2 2 0 0 0-2.8 0L4.5 19.6"/></svg>
+            <p class="dz-title">点击上传,或把图片拖到这里</p>
+            <p class="dz-hint">支持手机相册 · Ctrl+V 粘贴截图<br/>图片不会离开你的浏览器</p>
+          </div>
+          <canvas id="preview" hidden></canvas>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="btn-png" disabled>下载 PNG</button>
+          <button class="btn" id="btn-png2x" disabled>PNG 2x</button>
+          <button class="btn accent" id="btn-pdf" disabled>导出 PDF 打印</button>
+          <span class="actions-gap"></span>
+          <button class="btn ghost" id="btn-copy" disabled>复制文本</button>
+          <button class="btn ghost" id="btn-txt" disabled>TXT</button>
+        </div>
+      </div>
+
+      <!-- 参数面板 -->
+      <aside class="card param-pane">
+        <div class="param-section">
+          <h3>文字</h3>
+          <div class="field">
+            <input type="text" id="param-text" placeholder="如:某某我爱你" maxlength="60" />
+            <p class="field-hint">这句话会平铺成整幅画,空格是留白</p>
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>外观</h3>
+          <div class="field">
+            <label>渲染模式</label>
+            <div class="segmented" id="mode-seg">
+              <button type="button" data-mode="mono" class="active">单色</button>
+              <button type="button" data-mode="color">原色</button>
+            </div>
+          </div>
+          <div class="colors-row">
+            <div class="field color-field">
+              <label>背景颜色</label>
+              <input type="color" id="param-bg" value="#ffffff" />
+            </div>
+            <div class="field color-field" id="fg-field">
+              <label>文字颜色</label>
+              <input type="color" id="param-fg" value="#1a1a1a" />
+            </div>
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>排版</h3>
+          <div class="slider-row">
+            <div class="slider-label"><span>输出宽度</span><output id="val-cols">100</output></div>
+            <input type="range" id="param-cols" min="40" max="300" step="2" value="100" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>字号大小</span><output id="val-fs">18</output></div>
+            <input type="range" id="param-fs" min="8" max="36" step="1" value="18" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>字间距</span><output id="val-ls">0</output></div>
+            <input type="range" id="param-ls" min="0" max="16" step="1" value="0" />
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>明暗</h3>
+          <div class="slider-row">
+            <div class="slider-label"><span>亮度阈值</span><output id="val-th">128</output></div>
+            <input type="range" id="param-th" min="1" max="255" step="1" value="128" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>对比度</span><output id="val-ct">1.00</output></div>
+            <input type="range" id="param-ct" min="0.5" max="2.5" step="0.05" value="1" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-label"><span>亮度</span><output id="val-br">1.00</output></div>
+            <input type="range" id="param-br" min="0.5" max="2.5" step="0.05" value="1" />
+          </div>
+          <label class="switch-row"><span>反转前景/背景</span><input type="checkbox" id="param-invert" /><i class="switch"></i></label>
+          <label class="switch-row"><span>加粗边缘</span><input type="checkbox" id="param-edges" /><i class="switch"></i></label>
+        </div>
+
+        <div class="param-section">
+          <h3>预设</h3>
+          <div class="preset-row">
+            <button class="btn ghost small" data-preset="photo">照片标准</button>
+            <button class="btn ghost small" data-preset="cartoon">白底卡通 · Logo</button>
+            <button class="btn ghost small" data-preset="dark">暗底 · 夜景</button>
+          </div>
+          <button class="btn ghost small full" id="btn-reset">恢复默认</button>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ============ 案例画廊 ============ -->
+    <section class="gallery">
+      <h2>案例 <span class="gallery-sub">每一张,都是可打印的礼物</span></h2>
+      <div class="gallery-grid">
+        <figure class="g-card">
+          <div class="g-img"><img src="./cases/logo.jpg" alt="秒思 Logo 文字画" loading="lazy" /></div>
+          <figcaption><b>公司 Logo</b><span>文字「秒思」· 单色</span></figcaption>
+        </figure>
+        <figure class="g-card">
+          <div class="g-img"><img src="./cases/catfish.jpg" alt="小鲶鱼头像文字画" loading="lazy" /></div>
+          <figcaption><b>卡通头像</b><span>文字「小鲶鱼」</span></figcaption>
+        </figure>
+        <figure class="g-card">
+          <div class="g-img"><img src="./cases/heart-color.jpg" alt="心形原色文字画" loading="lazy" /></div>
+          <figcaption><b>我爱你</b><span>文字「某某我爱你」· 原色模式</span></figcaption>
+        </figure>
+        <figure class="g-card">
+          <div class="g-img"><img src="./cases/team-cloud.jpg" alt="全员姓名词云" loading="lazy" /><em class="g-badge">离线管线</em></div>
+          <figcaption><b>全员姓名拼吉祥物</b><span>词云模式 · Python 管线生成</span></figcaption>
+        </figure>
+        <figure class="g-card">
+          <div class="g-img"><img src="./cases/love-dark.jpg" alt="WordArt 白字黑底" loading="lazy" /></div>
+          <figcaption><b>WordArt</b><span>文字「WordArt」· 白字黑底反转</span></figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    纯前端静态应用 · 图片零上传 · 可离线使用 —— 打印出来,就是礼物
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
