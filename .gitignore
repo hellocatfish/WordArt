@@ -1,5 +1,11 @@
 # dependencies
 node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# generated art (regenerated on demand, uploaded to COS manually)
+backend/output/
 
 # build output
 dist/

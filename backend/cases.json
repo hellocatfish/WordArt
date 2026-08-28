@@ -1,0 +1,48 @@
+[
+  {
+    "name": "demo_sphere",
+    "image": "backend/assets/demo/sphere.png",
+    "text": "某某我爱你",
+    "mode": "text",
+    "cols": 90,
+    "threshold": 110,
+    "invert": true
+  },
+  {
+    "name": "demo_love_dark",
+    "image": "backend/assets/demo/love.png",
+    "text": "WordArt",
+    "mode": "text",
+    "cols": 110,
+    "threshold": 120,
+    "bg": "#0b0b12",
+    "fg": "#f5f5f5",
+    "invert": true,
+    "bold_edges": true
+  },
+  {
+    "name": "demo_heart_color",
+    "image": "backend/assets/demo/heart.png",
+    "text": "某某我爱你",
+    "mode": "text",
+    "cols": 100,
+    "color_mode": "color",
+    "bold_edges": true
+  },
+  {
+    "name": "demo_sphere_ascii",
+    "image": "backend/assets/demo/sphere.png",
+    "text": "某某我爱你",
+    "mode": "ascii",
+    "cols": 110,
+    "map_mode": "band"
+  },
+  {
+    "name": "demo_team_cloud",
+    "image": "backend/assets/demo/heart.png",
+    "mask": "backend/assets/demo/heart.png",
+    "mode": "cloud",
+    "words": ["张三", "李四", "王五", "赵六", "钱七", "孙八", "周九", "吴十", "郑一", "王二"],
+    "bg": "#ffffff"
+  }
+]
