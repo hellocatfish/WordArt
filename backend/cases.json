@@ -38,6 +38,14 @@
     "map_mode": "band"
   },
   {
+    "name": "小鲶鱼头像",
+    "image": "backend/assets/demo/头像.jpg",
+    "text": "小鲶鱼",
+    "mode": "text",
+    "cols": 100,
+    "threshold": 175
+  },
+  {
     "name": "demo_team_cloud",
     "image": "backend/assets/demo/heart.png",
     "mask": "backend/assets/demo/heart.png",
