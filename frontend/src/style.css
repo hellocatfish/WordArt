@@ -60,6 +60,7 @@
   --stage-hl-soft: rgba(43, 37, 26, 0.08);
   --drag-bg: #f6e8dd;
   --stage-drag-bg: #f2e7da;
+  --crop-veil: rgba(24, 20, 14, 0.58); /* 裁剪时图片上框外区域的压暗度(仅作用于图片本身) */
   --photo-hover-border: #d3c6a8;
   --accent-head-grad: linear-gradient(180deg, #fbf0e7, var(--card));
   --accent-head-line: #f0e0d2;
@@ -1052,6 +1053,8 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ============ 裁剪对话框:让主体占满画幅 ============ */
+/* 页面不整体压暗:变灰只发生在图片上(见 .crop-dim),
+   对话框靠描边 + 投影从页面浮起,周边保持原亮度 */
 .crop-overlay {
   position: fixed;
   inset: 0;
@@ -1059,7 +1062,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(24, 20, 14, 0.55);
+  background: transparent;
   opacity: 0;
   transition: opacity 0.18s ease;
 }
@@ -1073,7 +1076,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-m);
+  box-shadow: var(--shadow-sheet); /* 无遮罩衬底,投影升一档保住悬浮感 */
   display: flex;
   flex-direction: column;
   transform: translateY(8px);
@@ -1125,11 +1128,19 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   box-shadow: var(--shadow-s);
 }
 
-/* 裁剪框:朱砂描边;框外用超大 spread 阴影压暗 */
+/* 压暗层:只盖图片本身,裁剪框内挖空保持亮色。
+   clip-path 由 cropper.js 随裁剪框同步(外圈+反向内圈的多边形挖孔) */
+.crop-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--crop-veil);
+  pointer-events: none;
+}
+
+/* 裁剪框:朱砂描边;明暗对比交给上方压暗层 */
 .crop-box {
   position: absolute;
   cursor: move;
-  box-shadow: 0 0 0 200vmax rgba(24, 20, 14, 0.52);
 }
 
 .crop-box::before {
@@ -1312,6 +1323,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   --stage-hl-soft: rgba(0, 0, 0, 0.34);
   --drag-bg: rgba(207, 83, 64, 0.10);
   --stage-drag-bg: rgba(207, 83, 64, 0.08);
+  --crop-veil: rgba(4, 6, 10, 0.68);
   --photo-hover-border: rgba(255, 255, 255, 0.30);
   --accent-head-grad: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
   --accent-head-line: rgba(255, 255, 255, 0.08);
@@ -1395,9 +1407,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   backdrop-filter: blur(14px);
 }
 
-/* 裁剪对话框:夜间玻璃面板,压暗遮罩更深一档 */
-[data-theme="night"] .crop-overlay { background: rgba(4, 6, 10, 0.64); }
-
+/* 裁剪对话框:夜间玻璃面板 */
 [data-theme="night"] .crop-dialog {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.034));
   -webkit-backdrop-filter: blur(18px) saturate(1.55);
@@ -1408,8 +1418,6 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 18px 44px rgba(2, 4, 8, 0.5);
 }
-
-[data-theme="night"] .crop-box { box-shadow: 0 0 0 200vmax rgba(4, 6, 10, 0.62); }
 
 /* 夜间:裁剪胶囊底色更深一档,白描边保住与深色图片的边界 */
 [data-theme="night"] .crop-btn { background: rgba(10, 13, 19, 0.82); }

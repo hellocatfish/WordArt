@@ -4,6 +4,9 @@
  * 非破坏性:始终基于上传原图计算归一化裁剪框 {x,y,w,h} ∈ [0,1],
  * 应用时才由调用方用 Canvas 从原图截取——不经任何网络(隐私红线)。
  *
+ * 压暗语义:页面与对话框保持原亮度,变灰只发生在图片本身——
+ * .crop-veil 覆盖整图,clip-path 随裁剪框挖孔,框内保持亮色。
+ *
  * 交互:框内拖动移动、8 个手柄缩放、方向键微调(Shift 加速)、
  * Esc / 点遮罩取消。全部走 Pointer Events,鼠标与触屏同一套逻辑。
  */
@@ -26,8 +29,9 @@ export function openCropper({ url, image, rect, onApply }) {
   const overlay = $('#crop-overlay')
   const wrap = $('#crop-wrap')
   const img = $('#crop-img')
+  const veil = $('#crop-veil') // 图片压暗层(框外变灰,框内亮色)
   const box = $('#crop-box')
-  const dim = $('#crop-dim')
+  const size = $('#crop-size') // 尺寸读数
   const btnReset = $('#btn-crop-reset')
   const btnCancel = $('#btn-crop-cancel')
   const btnApply = $('#btn-crop-apply')
@@ -51,8 +55,15 @@ export function openCropper({ url, image, rect, onApply }) {
     box.style.top = `${r.t}px`
     box.style.width = `${r.w}px`
     box.style.height = `${r.h}px`
+    // 压暗层挖孔:外圈(整图)顺时针 + 内圈(裁剪框)逆时针,
+    // nonzero 填充下连接线相互抵消 → 中间带孔的"相框"。
+    // 框=全图时内外圈重合、面积为零,不压暗(初始态图片全亮)
+    veil.style.clipPath =
+      `polygon(0px 0px, ${W}px 0px, ${W}px ${H}px, 0px ${H}px, 0px 0px, ` +
+      `${r.l}px ${r.t}px, ${r.l}px ${r.t + r.h}px, ${r.l + r.w}px ${r.t + r.h}px, ` +
+      `${r.l + r.w}px ${r.t}px, ${r.l}px ${r.t}px)`
     const k = W / nw || 1
-    dim.textContent = `裁剪为 ${Math.round(r.w / k)} × ${Math.round(r.h / k)}(原图 ${nw} × ${nh})`
+    size.textContent = `裁剪为 ${Math.round(r.w / k)} × ${Math.round(r.h / k)}(原图 ${nw} × ${nh})`
   }
 
   const fromNormalized = (n) => ({
