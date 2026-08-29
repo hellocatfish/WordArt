@@ -54,7 +54,7 @@ frontend/
 │   └── style.css       # 样式
 └── public/
     ├── samples/        # 一键示例图(与 backend/cases.json 参数一致)
-    ├── cases/          # 案例画廊图(送恋人/送爸爸/送朋友/送公司/送同事/更多创意)
+    ├── cases/          # 案例画廊图(送恋人/送爸爸/送朋友/送公司/送同事/送爱好)
     └── favicon.svg
 ```
 

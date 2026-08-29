@@ -9,17 +9,17 @@
     "invert": true
   },
   {
-    "name": "demo_love_dark",
-    "image": "backend/assets/demo/love.png",
-    "text": "WordArt",
+    "name": "路飞语录",
+    "image": "backend/assets/demo/luffy.jpg",
+    "text": "海贼王我当定了",
     "mode": "text",
-    "cols": 110,
-    "threshold": 120,
+    "cols": 100,
+    "font_size": 18,
+    "spacing": 0,
+    "threshold": 155,
     "color_mode": "color",
-    "bg": "#0b0b12",
-    "fg": "#f5f5f5",
-    "invert": true,
-    "bold_edges": true
+    "contrast": 1.2,
+    "brightness": 0.6
   },
   {
     "name": "demo_heart_color",

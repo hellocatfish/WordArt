@@ -65,16 +65,16 @@ const SAMPLES = {
     fgColor: '#33200d',
     bgColor: '#e8d5a4',
   },
-  love: {
-    file: 'samples/love.png',
-    text: 'WordArt',
+  luffy: {
+    file: 'samples/luffy.jpg',
+    text: '海贼王我当定了',
     mode: 'color',
-    cols: 110,
-    threshold: 120,
-    invert: true,
-    boldEdges: true,
-    bgColor: '#0b0b12',
-    fgColor: '#f5f5f5',
+    cols: 100,
+    fontSize: 18,
+    letterSpacing: 0,
+    threshold: 155,
+    contrast: 1.2,
+    brightness: 0.6,
   },
 }
 
