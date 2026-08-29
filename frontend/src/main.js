@@ -184,7 +184,7 @@ function render() {
   }
   if (comparing) setCompare(false)
   if (!state.params.text.trim()) {
-    setStatus('先在左侧「你想说的话」里写点什么吧')
+    setStatus('先在「你想说的话」里写点什么吧')
     return
   }
   const t0 = performance.now()

@@ -49,7 +49,7 @@ WordArt/
     │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出
     │   ├── cropper.js       # 裁剪对话框:归一化裁剪框 + 8 手柄拖拽(Pointer Events)
     │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF)/ TXT
-    │   └── style.css        # 样式
+    │   └── style.css        # 样式:双主题(纸墨/夜航)+ 响应式(桌面通栏输入 banner / ≤960px 同屏双栏)
     └── public/
         ├── samples/         # 一键示例图 7 张(球体/心形/头像/logo/love/爸爸背影/橘猫),随 dist 打包
         ├── cases/           # 画廊案例图 6 张(送恋人/送爸爸/送自己/送公司/送同事/WordArt 暗底),随 dist 打包
@@ -162,11 +162,12 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 
 ## Git 约定
 
-`main` 单分支,中文 conventional commits(`feat(backend): ...` / `feat(frontend): ...` / `feat(cases): ...`)。历史三条:
+`main` 单分支,中文 conventional commits(`feat(backend): ...` / `feat(frontend): ...` / `feat(cases): ...`)。奠基三条 + 后续演进(`git log --oneline` 可查全):
 
 - `cf51d5a` 后端离线渲染管线(三条引擎 + 批量 CLI)
 - `451f82a` 小鲶鱼头像案例(阈值 175)
 - `4eaf8a3` 前端浏览器应用(零上传纯前端)
+- 后续:选图建议与裁剪工具、画廊 6 案故事卡 + 自托管字体、veil 挖孔压暗、响应式布局重排(桌面通栏 banner + 手机同屏双栏)等,见 `git log`
 
 不进版本库:`backend/output/`(成品图)、`dist/`、`node_modules/`、`.npm-cache/`。
 
@@ -186,6 +187,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 - 后端三条管线可用;`cases.json` 6 条案例(sphere / love_dark / heart_color / sphere_ascii / 小鲶鱼头像 / team_cloud)全部生成成功;秒思 logo 经 CLI 手动实测(阈值 215)效果确认
 - 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;`dist/` 构建成功(主体为按需加载的字体分包);画廊定为 6 案故事卡「这份礼物,送给谁?」(送恋人 / 送爸爸 / 送自己 / 送公司 / 送同事 / WordArt 暗底),离线词云案例已移除;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/ 并手机实测通过
 - 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;压暗只作用于图片本身(veil 挖孔方案),页面与对话框保持原亮度,桌面浏览器实测通过
+- 响应式布局重排(桌面 + 手机同一套叙事):桌面「创作输入」升为壹贰叁正下方的通栏 banner(`.col-input { display: contents }` 拆平分列,`.input-card` 跨 `grid-column: 1 / -1`),内部三层纵向堆叠——抬头 / 照片 / 一句话各自横向铺满,宽屏只放大呼吸感与一句话字号(17.5px),不改变层叠结构;手机(≤960px)改为输入通栏置顶 + 下方左「微调」右「成品」双栏同屏,成品卡 `sticky` 吸顶常驻,拖滑杆每刻结果都在眼前,不再上下来回滚动;614px 平板与 390px 手机、纸墨/夜航双主题均实测通过,控制台零报错
 - 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示(恋人合影+姓名 / 吉祥物+全员姓名 / 人物+语录 / 送礼 / 闲鱼变现 / 评委看现场跑产品),画廊 6 卡即讲述主线;案例图到此为止,不再新增
 - spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署已完成
-- 待办:把最新 dist(6 卡画廊 + 裁剪工具版)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理
+- 待办:把最新 dist(响应式布局版:桌面通栏 banner + 手机同屏双栏)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理

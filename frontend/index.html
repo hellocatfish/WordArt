@@ -62,7 +62,7 @@
 
     <!-- ============ 工作区:左输入 → 右输出 ============ -->
     <section class="studio" id="studio">
-      <!-- 左列:创作输入(强调)+ 微调 -->
+      <!-- 通栏输入卡(壹贰叁正下方的横向 banner)+ 微调面板:经 CSS 拆平分列 -->
       <div class="col col-input">
         <section class="card input-card" aria-label="创作输入">
           <header class="pane-head accent">
@@ -199,7 +199,7 @@
           <header class="pane-head output-head">
             <div>
               <h2>成品预览</h2>
-              <p class="pane-sub">由左侧的照片和一句话,实时拼成</p>
+              <p class="pane-sub"><span class="sub-desktop">由左侧的照片和一句话,实时拼成</span><span class="sub-mobile">照片 + 一句话,实时拼成</span></p>
             </div>
             <div class="preview-tools">
               <button class="btn ghost small" id="btn-compare" disabled aria-label="按住查看原图对比,松开回到文字画">
@@ -209,7 +209,7 @@
             </div>
           </header>
 
-          <div class="status" id="status-line">示例演示中 · 左侧放入你的照片,立即变成你的画</div>
+          <div class="status" id="status-line">示例演示中 · 放入你的照片,立即变成你的画</div>
 
           <div class="preview-stage" id="preview-stage">
             <canvas id="preview" hidden></canvas>

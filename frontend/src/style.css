@@ -9,9 +9,10 @@
    玻璃只借光、不带色 —— backdrop-filter 高斯模糊 + 饱和度增强,
    受光顶边 + 噪点颗粒,营造真实玻璃的安静高级感。
 
-   布局叙事:页首「三步成礼」使用演示 → 左列「创作输入」
-   (照片 + 一句话,唯二要定的事)→ 右列「成品预览」实时渲染;
-   微调面板退居左列下方。
+   布局叙事:页首「三步成礼」使用演示 → 「创作输入」通栏 banner
+   (抬头 / 照片 / 一句话三层纵向堆叠,各自横向铺满)→
+   下方左「微调」右「成品预览」实时对照;窄屏(≤960px)同一套
+   分区:输入通栏 + 左调参右看结果。
    ============================================================ */
 
 :root {
@@ -218,7 +219,7 @@ body {
   white-space: nowrap;
 }
 
-/* ============ 工作区布局:左输入 → 右输出 ============ */
+/* ============ 工作区布局:输入通栏 banner → 左微调 · 右成品 ============ */
 .studio {
   display: grid;
   grid-template-columns: 392px minmax(0, 1fr);
@@ -228,6 +229,13 @@ body {
 }
 
 .col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* 「创作输入」升为通栏:壹贰叁正下方的横向 banner;
+   col-input 拆平后,微调独占左列、成品独占右列,同屏对照 */
+.col-input { display: contents; }
+.input-card { grid-column: 1 / -1; }
+.param-pane { grid-column: 1; min-width: 0; }
+.col-output { grid-column: 2; }
 
 .card {
   background: var(--card);
@@ -256,6 +264,9 @@ body {
 }
 
 .pane-sub { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+/* 成品卡副标题的双份文案:窄屏双栏下"左侧"不再成立,换方向中性短句 */
+.pane-sub .sub-mobile { display: none; }
 
 /* 输入卡头:朱砂信笺抬头,强调"你唯二要定的事" */
 .pane-head.accent {
@@ -1227,40 +1238,69 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   .preview-stage { min-height: 380px; }
 }
 
+/* 桌面(≥961px):「创作输入」通栏 banner 内部保持纵向层叠
+   —— 抬头一行、照片一行、一句话一行,三层各自横向铺满;
+   宽屏放大的是呼吸感与主角字号,不改变层叠结构 */
+@media (min-width: 961px) {
+  .input-body { gap: 20px; padding: 18px 24px 20px; }
+
+  /* 照片行:通栏横向大画幅,原图居中 */
+  .photo-slot { min-height: 250px; }
+  .photo-slot img { max-height: 330px; }
+
+  /* 一句话行:通栏题字,banner 主角,字号放大一档 */
+  .input-body .input-field input[type="text"] { padding: 14px 18px; font-size: 17.5px; }
+}
+
 @media (max-width: 960px) {
-  /* 单列流:输入卡 → 成品卡 → 微调卡 */
-  .studio { display: flex; flex-direction: column; gap: 18px; }
+  /* 同屏双栏,向桌面看齐:输入卡通栏置顶,
+     下方左「微调」右「成品」——成品吸顶常驻,
+     拖滑杆的每一刻结果都在眼前,不再上下来回滚动 */
+  .studio {
+    grid-template-columns: minmax(0, 25fr) minmax(0, 27fr);
+    gap: 14px;
+  }
 
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
 
-  .col-input, .col-output { display: contents; }
-
-  .input-card { order: 1; }
-  .output-pane { order: 2; position: static; }
-  .param-pane { order: 3; }
+  .output-pane {
+    top: 10px; /* 基础样式已是 sticky,这里只收吸顶距离 */
+    padding-bottom: 16px;
+  }
 
   .site-header { flex-direction: column; align-items: flex-start; gap: 12px; }
 
   .steps { grid-template-columns: 1fr; gap: 12px; }
 
-  .preview-stage { min-height: 320px; padding: 18px; margin: 12px 16px 0; }
+  /* 副标题换短文案 */
+  .pane-sub .sub-desktop { display: none; }
+  .pane-sub .sub-mobile { display: inline; }
 
-  .preview-stage canvas { max-height: clamp(260px, 52vh, 560px); }
+  .preview-stage { min-height: clamp(170px, 26vh, 300px); padding: 14px; margin: 10px 12px 0; }
 
-  .status { padding: 12px 16px 0; }
+  .preview-stage canvas { max-height: 40vh; max-height: 40svh; }
 
-  .actions { margin: 16px 16px 0; }
+  .status { padding: 11px 12px 0; font-size: 12.5px; }
+
+  .actions { margin: 12px 12px 0; }
   .actions .btn { flex: 1 1 auto; }
   .actions .actions-gap { display: none; }
 
-  .output-pane { padding-bottom: 16px; }
-  .pane-head { padding: 13px 16px 11px; }
+  .pane-head { padding: 13px 14px 11px; }
   .pane-head.accent { padding: 14px 16px 12px; }
   .input-body { padding: 14px 16px 16px; }
+  .param-body { padding: 2px 14px 12px; }
+}
+
+/* 手机横屏 / 极矮视口:吸顶预览放不下就退回静态,双栏仍在同屏 */
+@media (max-width: 960px) and (max-height: 480px) {
+  .output-pane { position: static; }
+  .preview-stage { min-height: 140px; }
+  .preview-stage canvas { max-height: 30vh; }
 }
 
 @media (max-width: 560px) {
-  .container { padding: 0 14px; }
+  .container { padding: 0 12px; }
 
   .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 
@@ -1270,11 +1310,31 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
 
   .photo-slot img { max-height: 240px; }
 
+  .studio { gap: 12px; }
+
+  .output-pane { top: 8px; padding-bottom: 12px; }
+
   .pane-head, .pane-head.accent { padding: 12px 14px 10px; }
 
   .input-body { padding: 13px 14px 15px; }
 
-  .param-body { padding: 2px 14px 12px; }
+  /* 左列参数:窄栏紧凑化(颜色竖排、预设通栏、分段钮收窄) */
+  .param-body { padding: 2px 12px 10px; }
+  .param-section { padding: 12px 0 13px; }
+  .param-section h3 { margin-bottom: 10px; }
+  .segmented button { padding: 6px 14px; }
+  .colors-row { flex-direction: column; gap: 10px; }
+  .preset-row .btn { flex: 1 1 100%; }
+  .switch-row { font-size: 12.5px; padding: 8px 0; }
+
+  /* 右列成品:按钮去图标改两列栅格,PDF 主操作通栏 */
+  .preview-stage { margin: 10px 10px 0; padding: 10px; min-height: 150px; }
+  .preview-stage canvas { max-height: 34vh; max-height: 34svh; }
+  .status { padding: 10px 10px 0; }
+  .actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 10px 0; }
+  .actions .btn { min-height: 38px; padding: 0 6px; font-size: 12.5px; }
+  .actions .btn svg { display: none; }
+  #btn-pdf { grid-column: 1 / -1; }
 }
 
 /* ============================================================
