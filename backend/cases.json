@@ -46,6 +46,36 @@
     "threshold": 175
   },
   {
+    "name": "爸爸背影",
+    "image": "backend/assets/demo/father.jpg",
+    "text": "爸爸我爱你",
+    "mode": "text",
+    "cols": 100,
+    "threshold": 145,
+    "fg": "#26221b",
+    "bg": "#fffdf9"
+  },
+  {
+    "name": "橘猫",
+    "image": "backend/assets/demo/cat.jpg",
+    "text": "陪我五年",
+    "mode": "text",
+    "cols": 100,
+    "threshold": 150,
+    "fg": "#9c4312",
+    "bg": "#fff6ea"
+  },
+  {
+    "name": "秒思雕刻版",
+    "image": "backend/assets/demo/miaosilogo.jpg",
+    "text": "秒思",
+    "mode": "text",
+    "cols": 100,
+    "threshold": 215,
+    "fg": "#33200d",
+    "bg": "#e8d5a4"
+  },
+  {
     "name": "demo_team_cloud",
     "image": "backend/assets/demo/heart.png",
     "mask": "backend/assets/demo/heart.png",
