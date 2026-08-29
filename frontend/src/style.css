@@ -571,6 +571,72 @@ body {
 /* 手写字体下载中:按钮出态提示,避免误以为无响应 */
 .font-switch button.loading { opacity: 0.55; cursor: progress; }
 
+/* 字体下载进度条:胶囊下方细进度条,仅在下载手写字体时出现 */
+.font-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 2px;
+}
+.font-progress[hidden] { display: none; }
+.font-progress i {
+  position: relative;
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.font-progress i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: var(--accent);
+  border-radius: 999px;
+  transition: transform 0.15s linear;
+}
+/* 收不到真实进度(如 CORS 未暴露 Content-Length)时走不确定滑动条 */
+.font-progress.indeterminate i::after {
+  transform: scaleX(0.35) translateX(-240%);
+  animation: font-progress-indet 1.15s ease-in-out infinite;
+}
+@keyframes font-progress-indet {
+  0% { transform: scaleX(0.3) translateX(-240%); }
+  55% { transform: scaleX(0.5) translateX(230%); }
+  100% { transform: scaleX(0.3) translateX(-240%); }
+}
+.font-progress-text {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: right;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 窄屏适配(≤960px,即移动端布局):输出头允许换行,工具条独占一行且宽度撑满,
+   字体胶囊内部可折行、按钮可收缩换行,保证任何机型都不超出「成品预览」容器;
+   标签收窄更紧凑,与胶囊协调 */
+@media (max-width: 960px) {
+  .output-head { flex-wrap: wrap; row-gap: 8px; }
+  .preview-tools { width: 100%; justify-content: space-between; gap: 8px; }
+  .font-pick { flex-wrap: wrap; row-gap: 6px; max-width: 100%; }
+  .font-label { font-size: 11px; letter-spacing: 0.02em; }
+  .font-switch { max-width: 100%; }
+  .font-switch button { flex: 1 1 auto; min-width: 0; padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+}
+
+/* 手机(≤560px):更紧凑的胶囊,允许按钮换行兜底,圆角收小避免多行时出现怪异药丸形 */
+@media (max-width: 560px) {
+  .font-label { font-size: 10.5px; }
+  .font-switch { flex-wrap: wrap; justify-content: center; border-radius: 12px; }
+  .font-switch button { padding: 3px 9px; font-size: 11px; }
+}
+
 .status {
   display: flex;
   align-items: center;

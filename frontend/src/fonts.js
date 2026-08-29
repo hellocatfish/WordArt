@@ -43,23 +43,69 @@ export const FONT_DEFS = {
 const loaded = new Set()
 /** 进行中的加载 Promise,避免并发重复请求同一个字体 */
 const loading = {}
+/** 某 key 加载进行中的进度订阅回调(供 UI 显示下载进度条) */
+const progressSubs = {}
+
+/**
+ * 用 fetch 流式读取字体字节,可上报真实下载进度(0~1);成功后注册 FontFace。
+ * 无 Content-Length(如 CORS 未暴露该头)时只收字节、不报进度,UI 走不确定态。
+ */
+async function loadViaFetch(def, src, onProgress) {
+  const res = await fetch(src, { mode: 'cors', cache: 'force-cache' })
+  if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+  const total = Number(res.headers.get('Content-Length')) || 0
+  const reader = res.body.getReader()
+  const chunks = []
+  let received = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    received += value.length
+    if (total > 0) onProgress(Math.min(0.99, received / total))
+  }
+  const face = new FontFace(def.family, await new Blob(chunks).arrayBuffer())
+  await face.load()
+  document.fonts.add(face)
+}
+
+/** 依次尝试候选源;fetch 流式读取不可用时(极老内核)退回 FontFace(url) 直载,仍可正常使用 */
+async function loadFont(def, src, onProgress) {
+  try {
+    await loadViaFetch(def, src, onProgress)
+  } catch {
+    const face = new FontFace(def.family, `url(${src})`)
+    await face.load()
+    document.fonts.add(face)
+  }
+}
 
 /**
  * 依次尝试候选源加载指定字体,任一成功即入册 document.fonts。
  * @param {string} key FONT_DEFS 的键(system 直接返回 false,无需加载)
+ * @param {(p:number)=>void} [onProgress] 下载进度回调(0~1);同一在途请求可被多方订阅
  * @returns {Promise<boolean>}
  */
-export function ensureFont(key) {
+export function ensureFont(key, onProgress) {
   const def = FONT_DEFS[key]
   if (!def || !def.sources.length) return Promise.resolve(false)
   if (loaded.has(key)) return Promise.resolve(true)
-  if (loading[key]) return loading[key]
+  if (onProgress) {
+    progressSubs[key] = progressSubs[key] || new Set()
+    progressSubs[key].add(onProgress)
+  }
+  if (loading[key]) {
+    return loading[key].finally(() => {
+      if (onProgress) progressSubs[key]?.delete(onProgress)
+    })
+  }
   loading[key] = (async () => {
     for (const src of def.sources) {
       try {
-        const face = new FontFace(def.family, `url(${src})`)
-        await face.load()
-        document.fonts.add(face)
+        await loadFont(def, src, (p) => {
+          if (!progressSubs[key]) return
+          progressSubs[key].forEach((fn) => fn(p))
+        })
         await document.fonts.load(`16px "${def.family}"`)
         loaded.add(key)
         return true
@@ -68,7 +114,14 @@ export function ensureFont(key) {
       }
     }
     return false
-  })()
+  })().finally(() => {
+    delete loading[key]
+    if (progressSubs[key]) {
+      progressSubs[key].forEach((fn) => fn(1))
+      progressSubs[key].clear()
+      delete progressSubs[key]
+    }
+  })
   return loading[key]
 }
 

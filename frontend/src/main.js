@@ -703,6 +703,34 @@ function bindCompare() {
 
 /* ---------------- 画字字体切换(COS 手写字体 / 系统) ---------------- */
 
+const fontProgress = $('#font-progress')
+const fontProgressBar = $('#font-progress-bar')
+const fontProgressText = $('#font-progress-text')
+
+/** 显示字体下载进度条:先进入不确定态,收到真实进度后切百分比 */
+function showFontProgress(label) {
+  if (!fontProgress) return
+  fontProgress.hidden = false
+  fontProgress.classList.add('indeterminate')
+  if (fontProgressText) fontProgressText.textContent = `${label}下载中…`
+  if (fontProgressBar) fontProgressBar.style.transform = 'scaleX(0)'
+}
+
+/** 下载进度回调:0~1 → 百分比(收不到真实进度时保持不确定态) */
+function updateFontProgress(p) {
+  if (!fontProgress || fontProgress.hidden) return
+  fontProgress.classList.remove('indeterminate')
+  const pct = Math.max(0, Math.min(100, Math.round(p * 100)))
+  if (fontProgressBar) fontProgressBar.style.transform = `scaleX(${p})`
+  if (fontProgressText) fontProgressText.textContent = `${pct}%`
+}
+
+function hideFontProgress() {
+  if (!fontProgress) return
+  fontProgress.hidden = true
+  fontProgress.classList.remove('indeterminate')
+}
+
 /** 同步切换按钮高亮态 */
 function syncFontUI(key) {
   $$('#font-switch button').forEach((b) =>
@@ -711,8 +739,8 @@ function syncFontUI(key) {
 }
 
 /**
- * 点击某档字体:先按需加载(首次 ~4MB),成功后再应用并重渲染。
- * 下载期间按钮给 loading 态;失败自动回退系统字体并 toast 说明。
+ * 点击某档字体:选中态与预览立即响应(先用系统字体顶替,页面不干等),
+ * 下载期间显示进度条;字体就绪后换手写体重绘。失败自动回退系统字体并 toast 说明。
  */
 async function switchFont(key) {
   const btn = $(`#font-switch button[data-font="${key}"]`)
@@ -720,15 +748,22 @@ async function switchFont(key) {
   if (isSystem) {
     applyFont('system')
     syncFontUI('system')
+    hideFontProgress()
     scheduleRender()
     return
   }
   if (!btn) return
+  // 立即反馈:高亮选中 + 先用当前可用字体渲染,避免"点了没动静"
   btn.classList.add('loading')
   btn.disabled = true
-  const ok = await ensureFont(key)
+  syncFontUI(key)
+  applyFont(key)
+  scheduleRender()
+  showFontProgress(FONT_DEFS[key]?.label || '')
+  const ok = await ensureFont(key, updateFontProgress)
   btn.classList.remove('loading')
   btn.disabled = false
+  hideFontProgress()
   if (!ok) {
     applyFont('system')
     syncFontUI('system')
@@ -736,9 +771,7 @@ async function switchFont(key) {
     toast('手写字体加载失败,已回退系统字体')
     return
   }
-  applyFont(key)
-  syncFontUI(key)
-  scheduleRender()
+  scheduleRender() // 字体就绪,换手写体重绘
   toast(`已切换为${FONT_DEFS[key]?.label || ''}手写体`)
 }
 
@@ -763,6 +796,19 @@ function bindFonts() {
     if (!btn || btn.disabled) return
     switchFont(btn.dataset.font)
   })
+
+  // 首屏稳定后(页面加载完 + 3 秒)静默预取两种手写字体:
+  // 让"点选即用"——之后点竹石体/沐瑶不再干等下载;用户若更早点击,
+  // ensureFont 会复用同一份在途请求,不重复下载、进度条照常显示。
+  const preloadKeys = Object.keys(FONT_DEFS).filter((k) => k !== 'system')
+  const schedulePreload = () => {
+    if (document.fonts) preloadKeys.forEach((k) => ensureFont(k))
+  }
+  if (document.readyState === 'complete') {
+    setTimeout(schedulePreload, 3000)
+  } else {
+    window.addEventListener('load', () => setTimeout(schedulePreload, 3000), { once: true })
+  }
 }
 
 /* ---------------- 启动 ---------------- */
