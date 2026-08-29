@@ -46,14 +46,15 @@ WordArt/
     ├── package.json         # jspdf + vite(字体不依赖 npm 包,已预生成于 public/fonts/)
     ├── src/
     │   ├── engine.js        # 渲染引擎:与 Python 同口径(computeLayout/paint)
-    │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出
+    │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出、字体切换
     │   ├── cropper.js       # 裁剪对话框:归一化裁剪框 + 8 手柄拖拽(Pointer Events)
     │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF 懒加载)/ TXT
     │   ├── demo.js          # 空状态演示:内置心形 + 当前参数实时刷
+    │   ├── fonts.js         # 画字字体:三档(系统/竹石体/沐瑶),COS 主源 + 本地兜底
     │   ├── fonts.css        # @font-face:4 个子集化 woff2(指向 public/fonts/)
     │   └── style.css        # 样式:双主题(纸墨/夜航)+ 响应式(桌面通栏输入 banner / ≤960px 同屏双栏)
     └── public/
-        ├── fonts/           # 子集化字体 4 个 woff2(思源宋体/霞鹜文楷 × 400/700,共 ~715KB)
+        ├── fonts/           # 子集化 woff2 4 个(思源宋体/霞鹜文楷 ~715KB)+ 手写 TTF 兜底 2 个(竹石体/沐瑶)
         ├── samples/         # 一键示例图 6 张 WebP(心形/头像/logo/爸爸背影/朋友/luffy)
         ├── cases/           # 画廊案例图 6 张 WebP(恋人/爸爸/朋友/公司/爱好/同事压轴)
         ├── _headers         # Cloudflare Pages 缓存:assets/fonts 一年 immutable,samples/cases 7 天
@@ -96,6 +97,8 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 
 `dist/` 因 `base './'` 相对路径,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。全部资源(示例图/案例图/字体)同源随包,不依赖腾讯云 COS 等外链。字体为自托管 webfont:思源宋体(标题衬线,400/700)+ 霞鹜文楷(标语/印章楷体,400/700),按站点字符集(页面文案 + ASCII + 常用姓氏/称谓/祝福语,思源宋体 400 额外收录常用输入字)子集化为 4 个 woff2 存于 `public/fonts/`(共 ~715KB),`index.html` 头部 preload、`src/fonts.css` 声明 @font-face,构建时被 base './' 重写为相对路径;手机弱网首屏字体从 ~2MB/几十个请求收敛到 4 个请求,未收录字符自动回退系统字体栈,访客设备无需预装字体。
 
+「画字字体」即字画正文的 Canvas 渲染字体,与页面 UI 字体(思源宋体/霞鹜文楷)无关,成品预览右上角三档可切换:系统黑体(默认,零下载)/ 杨任东竹石体(硬笔手写)/ 沐瑶随心手写体(中性笔手写)。手写字体源策略:COS 加速域名为主源(`https://wordart202608-1379320306.cos.accelerate.myqcloud.com/`,桶已配 CORS:来源含 pages.dev / localhost / 127.0.0.1,Methods GET+HEAD,Max-Age 600),本地 `public/fonts/` 同款 TTF 兜底(`fonts.js` 的 `ensureFont` 依次尝试,任一成功即入册 `document.fonts`)——COS 未配 CORS / 弱网 / 离线时自动回退同源文件,演示永不因字体缺失白屏;仅在点开对应档位时按需加载(竹石体 ~4.3MB / 沐瑶 ~3.5MB,加载中按钮 loading 态、失败回退系统并 toast),首屏零额外下载;选择用 `localStorage` 持久化(刷新恢复,后台预热字体就绪后自动重渲);`engine.js` 的 `activeFontStack` 被切换后,预览与导出(1x/2x/PDF)自然使用同一画字字体,手写体未收录字符回退系统字体栈。
+
 移动端加载提速口径(2026-08-29 定稿,针对手机 Safari 实测偏慢):字体子集化(上段);案例图/示例图全部转 WebP(cases 760px q72 共 ~558KB 画廊展示用、samples 1400px q85 共 ~190KB 渲染输入用,`loading="lazy"` 按需拉);jsPDF + html2canvas 拆为点击「导出 PDF」时才加载的懒 chunk(首屏 JS ~173KB/gzip ~60KB,PDF 组件 ~560KB 不占首屏);`public/_headers` 配 Cloudflare Pages 缓存(assets/fonts 一年 immutable,案例/示例图 7 天,回访近零请求)。注意事项:字体文件名固定、内容变更时需改文件名破缓存(如加 `-v2`);`_headers` 只在 Cloudflare Pages 生效,其他托管平台自行配等价缓存头。
 
 ## 双引擎架构与渲染语义
@@ -130,7 +133,8 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | 文件 | 主要导出 | 说明 |
 |---|---|---|
 | `engine.js` | `DEFAULT_PARAMS`、`computeLayout()`、`paint()`、`buildTextArt()`、`CJK_FONT_STACK` | 渲染引擎,对应 Python 的 engine + sampling;`buildTextArt` 产纯文本供誊抄 |
-| `main.js` | (应用入口,无导出) | `SAMPLES` 六个一键示例(心形/爸爸/朋友/卡通头像/Logo木色/暗底,画廊案例一律原色渲染,参数与 cases.json 对齐:爸爸 阈值145+亮度0.9、朋友 阈值200+对比度1.35+亮度0.95、avatar 阈值 175、logoWood 阈值 215);`PRESETS` 三个参数预设(照片标准 = 原色 + 阈值 170 + 亮度 0.9,与默认口径一致);上传支持点击/拖拽/Ctrl+V 粘贴,用户主动换图时重置回默认口径(原色 + 阈值 170 + 亮度 0.9,保留已输入的那句话,示例/预设参数不串台);参数变动 120ms 防抖重渲染;滑杆右侧数值可点击直接输入(`bindRange` 的 `.val-edit`,回车/失焦提交、Esc 还原、越界自动收拢到滑杆范围并对齐步长);`state.originalSource` 永存原图,裁剪只改 `state.source` |
+| `fonts.js` | `FONT_DEFS`、`ensureFont()`、`applyFont()`、`storedFontKey()` | 画字字体加载与切换:system / yrdzst(竹石体) / muyao(沐瑶) 三档;`ensureFont` 依次尝试 COS 源 → 本地兜底,成功即入册 `document.fonts`(按 key 去重、并发只请求一次);`applyFont` 把选中字体排到引擎字体栈首并持久化偏好;手写体未收录字符自动回退系统字体栈 |
+| `main.js` | (应用入口,无导出) | `SAMPLES` 六个一键示例(心形/爸爸/朋友/卡通头像/Logo木色/暗底,画廊案例一律原色渲染,参数与 cases.json 对齐:爸爸 阈值145+亮度0.9、朋友 阈值200+对比度1.35+亮度0.95、avatar 阈值 175、logoWood 阈值 215);`PRESETS` 三个参数预设(照片标准 = 原色 + 阈值 170 + 亮度 0.9,与默认口径一致);上传支持点击/拖拽/Ctrl+V 粘贴,用户主动换图时重置回默认口径(原色 + 阈值 170 + 亮度 0.9,保留已输入的那句话,示例/预设参数不串台);参数变动 120ms 防抖重渲染;滑杆右侧数值可点击直接输入(`bindRange` 的 `.val-edit`,回车/失焦提交、Esc 还原、越界自动收拢到滑杆范围并对齐步长);`state.originalSource` 永存原图,裁剪只改 `state.source`;`bindFonts` 接成品预览右上角「画字字体」切换(点击先 `ensureFont` 按需加载,失败回退系统并 toast;启动时恢复 `localStorage` 偏好,字体就绪后自动重渲) |
 | `cropper.js` | `openCropper({ url, image, rect, onApply })` | 非破坏性裁剪对话框:归一化裁剪框 {x,y,w,h}∈[0,1],8 手柄 + 框内拖动 + 方向键微调(Shift 加速),Pointer Events 单套逻辑通吃鼠标/触屏;AbortController 管会话事件,Esc/遮罩关闭并归还焦点。压暗语义:页面与对话框保持原亮度,`.crop-veil` 只盖图片本身,clip-path 随框挖孔(外圈顺时针+内圈逆时针的 nonzero 多边形),框外变灰框内亮色;框=全图时面积为零不压暗 |
 | `exporter.js` | `exportCanvasPNG()`、`exportCanvasPDF()`、`downloadText()`、`downloadBlob()` | jsPDF 懒加载:点「导出 PDF」才 `import('jspdf')`,主 bundle 不含它(首屏提速关键,弱网首次导出有 toast 提示);无 CDN 依赖;PDF 自动横竖版、居中、12mm 边距 |
 
@@ -196,6 +200,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 - 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;画廊 6 案故事卡「这份礼物,送给谁?」定稿(按讲述顺序):送恋人「某某我爱你」· 一切从这里开始 / 送爸爸「爸爸我爱你」· 一路走来辛苦了 / 送朋友「夯爆了」· 本来想恶搞你的 / 送公司「秒思」木色 · 打印可当木板雕刻稿 / 送爱好「喜欢的角色」· 用他的语录拼成他的形象(路飞「海贼王我当定了」)/ 送同事「小鲶鱼」· 下一张就是你的(压轴互动位);画廊与示例胶囊全部默认原色渲染,点击即载入全部参数;案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/
 - 默认渲染口径定稿:上传新图默认原色模式 + 亮度阈值 170 + 亮度 0.9(`engine.js` DEFAULT_PARAMS、`index.html` 初值、「照片标准」预设、上传重置四处一致),多数照片零调参直出;用户主动换图自动回到该口径并保留已输入的那句话,示例/预设参数不串台
 - 滑杆数值可直接输入:六个滑杆(输出宽度/字号/字间距/阈值/对比度/亮度)右侧数字为 `.val-edit` 输入框,点击输入、回车或失焦提交、Esc 还原,非法输入回退当前值,越界收拢到滑杆范围并对齐步长;提交幂等(Enter 直接 commit + blur 兜底,不依赖程序化 blur 是否派发事件)
+- 画字字体三档切换(2026-08-29 完成):成品预览右上角「画字字体」分段控件(系统 / 竹石体 / 沐瑶),字画正文 Canvas 用对应字体渲染;手写字体 COS 加速域名为主源 + 本地 `public/fonts/` TTF 兜底,点选才按需加载(竹石体 ~4.3MB / 沐瑶 ~3.5MB,加载中按钮 loading 态,失败自动回退系统并 toast),`localStorage` 持久化偏好、刷新恢复且字体就绪后自动重渲;预览与导出(1x/2x/PDF)共用同一字体栈;浏览器实测三档切换、COS 源加载与回退均通过,控制台零报错
 - 输入卡文案:照片上方「选图建议」保留,一句话输入框上方新增「选字建议:部分文字有些空、不稠密,需要选平替的字」;示例胶囊定为 心形/爸爸/朋友/卡通头像/Logo 五枚(橘猫、球体已删,素材同步移除)
 - 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;压暗只作用于图片本身(veil 挖孔方案),页面与对话框保持原亮度
 - 响应式布局重排(桌面 + 手机同一套叙事):桌面「创作输入」升为壹贰叁正下方的通栏 banner(`.col-input { display: contents }` 拆平分列,`.input-card` 跨 `grid-column: 1 / -1`);手机(≤960px)改为输入通栏置顶 + 下方左「微调」右「成品」双栏同屏,成品卡 `sticky` 吸顶常驻;614px 平板与 390px 手机、纸墨/夜航双主题均实测通过,控制台零报错
