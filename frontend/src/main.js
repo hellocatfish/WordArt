@@ -17,6 +17,7 @@ import './style.css'
 import { DEFAULT_PARAMS, computeLayout, paint, buildTextArt } from './engine.js'
 import { exportCanvasPNG, exportCanvasPDF, downloadText } from './exporter.js'
 import { startDemo, refreshDemo, stopDemo, revealDraw, stopReveal } from './demo.js'
+import { openCropper } from './cropper.js'
 
 const $ = (s) => document.querySelector(s)
 const $$ = (s) => [...document.querySelectorAll(s)]
@@ -78,11 +79,15 @@ const PRESETS = {
 }
 
 const state = {
-  source: null, // ImageBitmap | HTMLImageElement
+  source: null, // 当前生效的图(未裁剪=原图,已裁剪=Canvas 截取产物)
+  originalSource: null, // 上传原图,永不被裁剪修改(非破坏性)
+  cropRect: null, // 归一化裁剪框 {x,y,w,h} ∈ [0,1];null = 未裁剪
   fileName: 'wordart',
+  fileLabel: '', // 输入卡展示的完整文件名(含扩展名)
   layout: null,
   params: { ...DEFAULT_PARAMS },
-  objectUrl: null, // 输入卡里展示原图用的 blob URL
+  objectUrl: null, // 原始文件 blob URL(裁剪对话框展示原图用)
+  displayUrl: null, // 输入卡当前展示图(原图或裁剪结果)的 blob URL
   lastArt: null, // 最近一次预览成品(长按对比原图用)
   fresh: false, // 新图首次渲染 → 播逐行书写动画
 }
@@ -94,6 +99,7 @@ const els = {
   sourceImg: $('#source-img'),
   photoMeta: $('#photo-meta'),
   btnReplace: $('#btn-replace'),
+  btnCrop: $('#btn-crop'),
   stage: $('#preview-stage'),
   preview: $('#preview'),
   status: $('#status-line'),
@@ -209,16 +215,23 @@ function render() {
 
 /* ---------------- 图片载入 ---------------- */
 
-/** 输入卡展示用户原图(真实输入始终可见) */
-function showSource(file) {
+/** 输入卡展示当前生效的图(未裁剪显示原图,已裁剪显示裁剪结果) */
+function showSource() {
   const w = state.source.width || state.source.naturalWidth || 0
   const h = state.source.height || state.source.naturalHeight || 0
-  els.sourceImg.src = state.objectUrl
+  els.sourceImg.src = state.displayUrl
   els.sourceImg.hidden = false
   els.photoEmpty.hidden = true
   els.btnReplace.hidden = false
+  els.btnCrop.hidden = false
   els.photoMeta.hidden = false
-  els.photoMeta.textContent = `${file.name} · ${w} × ${h}`
+  if (state.cropRect && state.originalSource) {
+    const ow = state.originalSource.width || state.originalSource.naturalWidth
+    const oh = state.originalSource.height || state.originalSource.naturalHeight
+    els.photoMeta.textContent = `${state.fileLabel} · ${w} × ${h} · 已裁剪(原图 ${ow} × ${oh})`
+  } else {
+    els.photoMeta.textContent = `${state.fileLabel} · ${w} × ${h}`
+  }
   els.photoSlot.classList.add('filled')
   els.photoSlot.setAttribute('aria-label', '更换图片')
 }
@@ -249,14 +262,73 @@ async function handleFile(file) {
       return
     }
   }
+  // blob URL 生命周期:先释放旧展示图(可能是上一次的裁剪结果),再换新文件
+  if (state.displayUrl && state.displayUrl !== state.objectUrl) URL.revokeObjectURL(state.displayUrl)
+  state.displayUrl = null
   if (state.objectUrl) URL.revokeObjectURL(state.objectUrl)
   state.objectUrl = URL.createObjectURL(file)
+  state.displayUrl = state.objectUrl
   state.source = source
+  state.originalSource = source
+  state.cropRect = null
   state.fileName = (file.name || 'wordart').replace(/\.[^.]+$/, '') || 'wordart'
+  state.fileLabel = file.name || state.fileName
   state.fresh = true
-  showSource(file)
+  showSource()
   stopDemo()
   render()
+}
+
+/** 应用裁剪:从原图按像素截取(非破坏性,原图与裁剪框都留在 state,可反复重裁) */
+async function applyCrop(rect) {
+  if (!state.originalSource) return
+  const src = state.originalSource
+  const ow = src.width || src.naturalWidth
+  const oh = src.height || src.naturalHeight
+
+  // 框≈全图 = 撤销裁剪,直接回到原图
+  const isFull = rect.x < 0.002 && rect.y < 0.002 && rect.w > 0.998 && rect.h > 0.998
+  if (isFull) {
+    state.cropRect = null
+    state.source = src
+    if (state.displayUrl && state.displayUrl !== state.objectUrl) URL.revokeObjectURL(state.displayUrl)
+    state.displayUrl = state.objectUrl
+    state.fresh = true
+    showSource()
+    render()
+    toast('已还原为全图')
+    return
+  }
+
+  const sx = Math.max(0, Math.round(rect.x * ow))
+  const sy = Math.max(0, Math.round(rect.y * oh))
+  const sw = Math.max(1, Math.round(rect.w * ow))
+  const sh = Math.max(1, Math.round(rect.h * oh))
+  const canvas = document.createElement('canvas')
+  canvas.width = sw
+  canvas.height = sh
+  canvas.getContext('2d').drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh)
+
+  let cropped = canvas
+  try {
+    cropped = await createImageBitmap(canvas) // 与上传路径同类型;canvas 本身也能直接进渲染管线
+  } catch {
+    /* 旧浏览器退路:保留 canvas */
+  }
+  state.cropRect = { x: sx / ow, y: sy / oh, w: sw / ow, h: sh / oh }
+  state.source = cropped
+
+  // 输入卡换成裁剪结果(blob URL 异步就绪后刷新)
+  canvas.toBlob((blob) => {
+    if (!blob) return
+    if (state.displayUrl && state.displayUrl !== state.objectUrl) URL.revokeObjectURL(state.displayUrl)
+    state.displayUrl = URL.createObjectURL(blob)
+    showSource()
+  }, 'image/png')
+
+  state.fresh = true
+  render()
+  toast('已裁剪 · 主体更满,画面更聚焦')
 }
 
 /** 载入内置示例;scrollUp 为 true 时(画廊点击)滚回工作台 */
@@ -441,6 +513,21 @@ function bindUpload() {
     }
   })
   els.btnReplace.addEventListener('click', pick)
+
+  // 裁剪:始终基于原图(非破坏性),重新打开时恢复上次裁剪框。
+  // 按钮浮在照片槽内,点击/按键都不得冒泡(否则会误开文件选择器)
+  els.btnCrop.addEventListener('click', (e) => {
+    e.stopPropagation()
+    if (!state.originalSource || !state.objectUrl) return
+    openCropper({
+      url: state.objectUrl,
+      image: state.originalSource,
+      rect: state.cropRect,
+      onApply: applyCrop,
+    })
+  })
+  els.btnCrop.addEventListener('keydown', (e) => e.stopPropagation())
+
   els.fileInput.addEventListener('change', () => {
     if (els.fileInput.files[0]) handleFile(els.fileInput.files[0])
     els.fileInput.value = ''

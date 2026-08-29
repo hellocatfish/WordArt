@@ -47,6 +47,7 @@ WordArt/
     ├── src/
     │   ├── engine.js        # 渲染引擎:与 Python 同口径(computeLayout/paint)
     │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出
+    │   ├── cropper.js       # 裁剪对话框:归一化裁剪框 + 8 手柄拖拽(Pointer Events)
     │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF)/ TXT
     │   └── style.css        # 样式
     └── public/
@@ -123,7 +124,8 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | 文件 | 主要导出 | 说明 |
 |---|---|---|
 | `engine.js` | `DEFAULT_PARAMS`、`computeLayout()`、`paint()`、`buildTextArt()`、`CJK_FONT_STACK` | 渲染引擎,对应 Python 的 engine + sampling;`buildTextArt` 产纯文本供誊抄 |
-| `main.js` | (应用入口,无导出) | `SAMPLES` 四个一键示例(含 logo 阈值 215、avatar 阈值 175,与后端实测参数一致);`PRESETS` 三个参数预设;上传支持点击/拖拽/Ctrl+V 粘贴;参数变动 120ms 防抖重渲染 |
+| `main.js` | (应用入口,无导出) | `SAMPLES` 七个一键示例(含 logo 阈值 215、avatar 阈值 175,与后端实测参数一致);`PRESETS` 三个参数预设;上传支持点击/拖拽/Ctrl+V 粘贴;参数变动 120ms 防抖重渲染;`state.originalSource` 永存原图,裁剪只改 `state.source` |
+| `cropper.js` | `openCropper({ url, image, rect, onApply })` | 非破坏性裁剪对话框:归一化裁剪框 {x,y,w,h}∈[0,1],8 手柄 + 框内拖动 + 方向键微调(Shift 加速),Pointer Events 单套逻辑通吃鼠标/触屏;AbortController 管会话事件,Esc/遮罩关闭并归还焦点 |
 | `exporter.js` | `exportCanvasPNG()`、`exportCanvasPDF()`、`downloadText()`、`downloadBlob()` | jsPDF 打包进本地产物,无 CDN 依赖;PDF 自动横竖版、居中、12mm 边距 |
 
 ## 参数对应表
@@ -183,6 +185,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 
 - 后端三条管线可用;`cases.json` 6 条案例(sphere / love_dark / heart_color / sphere_ascii / 小鲶鱼头像 / team_cloud)全部生成成功;秒思 logo 经 CLI 手动实测(阈值 215)效果确认
 - 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;`dist/` 构建成功(主体为按需加载的字体分包);画廊定为 6 案故事卡「这份礼物,送给谁?」(送恋人 / 送爸爸 / 送自己 / 送公司 / 送同事 / WordArt 暗底),离线词云案例已移除;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/ 并手机实测通过
+- 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;桌面浏览器实测通过
 - 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示(恋人合影+姓名 / 吉祥物+全员姓名 / 人物+语录 / 送礼 / 闲鱼变现 / 评委看现场跑产品),画廊 6 卡即讲述主线;案例图到此为止,不再新增
 - spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署已完成
-- 待办:把最新 dist(6 卡画廊版)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理
+- 待办:把最新 dist(6 卡画廊 + 裁剪工具版)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理

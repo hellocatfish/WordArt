@@ -350,6 +350,42 @@ body {
 
 .photo-slot.filled { border-style: solid; border-color: var(--line); }
 
+/* 裁剪按钮:浮在图片框右上角的墨色玻璃胶囊,白图/深图上都读得清 */
+.crop-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: rgba(28, 25, 20, 0.78);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(40, 34, 24, 0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.crop-btn svg { flex: none; opacity: 0.92; }
+
+.crop-btn:hover {
+  background: var(--accent);
+  border-color: rgba(255, 255, 255, 0.72);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(194, 64, 42, 0.45);
+}
+
+.crop-btn:active { transform: translateY(0); }
+
 .photo-slot img {
   max-width: 100%;
   max-height: 300px;
@@ -1015,6 +1051,163 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
 
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ============ 裁剪对话框:让主体占满画幅 ============ */
+.crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(24, 20, 14, 0.55);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.crop-overlay.open { opacity: 1; }
+
+.crop-dialog {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-m);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(8px);
+  transition: transform 0.18s ease;
+}
+
+.crop-overlay.open .crop-dialog { transform: none; }
+
+.crop-head {
+  padding: 15px 20px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.crop-head h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.crop-head p { margin: 3px 0 0; font-size: 12.5px; color: var(--muted); }
+
+/* 裁剪台面:与预览台同款点阵稿纸,视觉上是"同一张工作台" */
+.crop-stage {
+  padding: 18px 20px;
+  display: grid;
+  place-items: center;
+  background-color: var(--desk);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+  background-size: 16px 16px;
+}
+
+.crop-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0; /* 消除 inline 基线缝隙 */
+  touch-action: none; /* 拖框不滚动页面 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.crop-wrap img {
+  max-width: 100%;
+  max-height: min(56vh, 520px);
+  display: block;
+  border-radius: 3px;
+  box-shadow: var(--shadow-s);
+}
+
+/* 裁剪框:朱砂描边;框外用超大 spread 阴影压暗 */
+.crop-box {
+  position: absolute;
+  cursor: move;
+  box-shadow: 0 0 0 200vmax rgba(24, 20, 14, 0.52);
+}
+
+.crop-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--accent);
+  pointer-events: none;
+}
+
+/* 九宫格构图辅助线(三分线) */
+.crop-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --gl: rgba(255, 255, 255, 0.62);
+  background-image:
+    linear-gradient(var(--gl), var(--gl)), linear-gradient(var(--gl), var(--gl)),
+    linear-gradient(var(--gl), var(--gl)), linear-gradient(var(--gl), var(--gl));
+  background-repeat: no-repeat;
+  background-size: 1px 100%, 1px 100%, 100% 1px, 100% 1px;
+  background-position: 33.333% 0, 66.667% 0, 0 33.333%, 0 66.667%;
+}
+
+/* 手柄:四角方点 + 四边胶囊条 */
+.hd {
+  position: absolute;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  z-index: 2;
+  border-radius: 3px;
+}
+
+.hd-nw, .hd-ne, .hd-sw, .hd-se { width: 14px; height: 14px; }
+.hd-n, .hd-s { width: 24px; height: 9px; border-radius: 999px; }
+.hd-e, .hd-w { width: 9px; height: 24px; border-radius: 999px; }
+
+.hd-nw { top: -7px; left: -7px; cursor: nwse-resize; }
+.hd-n { top: -4px; left: calc(50% - 12px); cursor: ns-resize; }
+.hd-ne { top: -7px; right: -7px; cursor: nesw-resize; }
+.hd-e { right: -4px; top: calc(50% - 12px); cursor: ew-resize; }
+.hd-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+.hd-s { bottom: -4px; left: calc(50% - 12px); cursor: ns-resize; }
+.hd-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+.hd-w { left: -4px; top: calc(50% - 12px); cursor: ew-resize; }
+
+.crop-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 20px 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.crop-keys { flex: none; font-size: 12px; opacity: 0.85; }
+
+.crop-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px 16px;
+}
+
+.crop-foot-gap { flex: 1; }
+
+@media (max-width: 560px) {
+  .crop-overlay { padding: 10px; }
+  .crop-stage { padding: 14px; }
+  .crop-wrap img { max-height: 44vh; }
+  .crop-meta { flex-direction: column; gap: 2px; padding: 10px 14px 0; }
+  .crop-foot { flex-wrap: wrap; padding: 12px 14px 14px; }
+  .crop-foot .btn { flex: 1 1 auto; }
+}
+
 /* ============ 响应式 ============ */
 
 /* 矮视口(桌面窄高窗口):取消吸顶,避免导出按钮被截断 */
@@ -1202,12 +1395,35 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   backdrop-filter: blur(14px);
 }
 
+/* 裁剪对话框:夜间玻璃面板,压暗遮罩更深一档 */
+[data-theme="night"] .crop-overlay { background: rgba(4, 6, 10, 0.64); }
+
+[data-theme="night"] .crop-dialog {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.034));
+  -webkit-backdrop-filter: blur(18px) saturate(1.55);
+  backdrop-filter: blur(18px) saturate(1.55);
+  border-color: rgba(255, 255, 255, 0.11);
+  border-top-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 44px rgba(2, 4, 8, 0.5);
+}
+
+[data-theme="night"] .crop-box { box-shadow: 0 0 0 200vmax rgba(4, 6, 10, 0.62); }
+
+/* 夜间:裁剪胶囊底色更深一档,白描边保住与深色图片的边界 */
+[data-theme="night"] .crop-btn { background: rgba(10, 13, 19, 0.82); }
+
+[data-theme="night"] .crop-btn:hover { background: var(--accent); }
+
 /* 不支持 backdrop-filter 的浏览器:退为高不透明实底,可读性优先 */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   [data-theme="night"] .card,
   [data-theme="night"] .step,
   [data-theme="night"] .g-card,
   [data-theme="night"] .theme-toggle,
+  [data-theme="night"] .crop-dialog,
+  [data-theme="night"] .crop-btn,
   [data-theme="night"] #toast {
     background: rgba(17, 21, 28, 0.94);
   }
