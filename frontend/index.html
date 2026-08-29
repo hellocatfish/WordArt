@@ -7,6 +7,11 @@
   <meta name="description" content="上传图片,输入一句话,生成由这句话拼成的字符画。导出 PNG/PDF 打印即礼物。图片全程本地处理,绝不上传。" />
   <meta name="theme-color" content="#c2402a" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <!-- 自托管字体(按页面字符集子集化的 4 个 woff2):preload 让真实字体尽早开始下载 -->
+  <link rel="preload" href="/fonts/noto-serif-sc-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/noto-serif-sc-700.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/lxgw-wenkai-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/lxgw-wenkai-700.woff2" as="font" type="font/woff2" crossorigin />
   <script>
     // 首屏即定主题,避免纸墨 → 夜航切换时的闪白(FOUC)
     ;(function () {
@@ -130,8 +135,8 @@
               <div class="field">
                 <label id="mode-label">渲染模式</label>
                 <div class="segmented" id="mode-seg" role="group" aria-labelledby="mode-label">
-                  <button type="button" data-mode="mono" class="active">单色</button>
-                  <button type="button" data-mode="color">原色</button>
+                  <button type="button" data-mode="color" class="active">原色</button>
+                  <button type="button" data-mode="mono">单色</button>
                 </div>
               </div>
               <div class="colors-row">
@@ -141,7 +146,7 @@
                 </div>
                 <div class="field color-field" id="fg-field">
                   <label for="param-fg">文字颜色</label>
-                  <input type="color" id="param-fg" value="#1a1a1a" />
+                  <input type="color" id="param-fg" value="#1a1a1a" disabled />
                 </div>
               </div>
             </div>
@@ -165,16 +170,16 @@
             <div class="param-section">
               <h3>明暗</h3>
               <div class="slider-row">
-                <div class="slider-label"><span>亮度阈值</span><input class="val-edit" id="val-th" type="text" inputmode="numeric" value="128" aria-label="亮度阈值数值,可直接输入" /></div>
-                <input type="range" id="param-th" min="1" max="255" step="1" value="128" aria-label="亮度阈值" />
+                <div class="slider-label"><span>亮度阈值</span><input class="val-edit" id="val-th" type="text" inputmode="numeric" value="170" aria-label="亮度阈值数值,可直接输入" /></div>
+                <input type="range" id="param-th" min="1" max="255" step="1" value="170" aria-label="亮度阈值" />
               </div>
               <div class="slider-row">
                 <div class="slider-label"><span>对比度</span><input class="val-edit" id="val-ct" type="text" inputmode="decimal" value="1.00" aria-label="对比度数值,可直接输入" /></div>
                 <input type="range" id="param-ct" min="0.5" max="2.5" step="0.05" value="1" aria-label="对比度" />
               </div>
               <div class="slider-row">
-                <div class="slider-label"><span>亮度</span><input class="val-edit" id="val-br" type="text" inputmode="decimal" value="1.00" aria-label="亮度数值,可直接输入" /></div>
-                <input type="range" id="param-br" min="0.5" max="2.5" step="0.05" value="1" aria-label="亮度" />
+                <div class="slider-label"><span>亮度</span><input class="val-edit" id="val-br" type="text" inputmode="decimal" value="0.90" aria-label="亮度数值,可直接输入" /></div>
+                <input type="range" id="param-br" min="0.5" max="2.5" step="0.05" value="0.9" aria-label="亮度" />
               </div>
               <label class="switch-row"><span>反转前景/背景</span><input type="checkbox" id="param-invert" /><i class="switch" aria-hidden="true"></i></label>
               <label class="switch-row"><span>加粗边缘</span><input type="checkbox" id="param-edges" /><i class="switch" aria-hidden="true"></i></label>
@@ -245,28 +250,28 @@
       <h2>这份礼物,送给谁? <span class="gallery-sub">六个故事,点击任意一张,载入工作台试玩</span></h2>
       <div class="gallery-grid">
         <figure class="g-card" data-gallery="heart" role="button" tabindex="0" aria-label="载入送恋人案例:心形">
-          <div class="g-img"><img src="./cases/heart-color.jpg" alt="心形文字画「某某我爱你」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <div class="g-img"><img src="./cases/heart-color.webp" alt="心形文字画「某某我爱你」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
           <figcaption><b>送恋人</b><span>「某某我爱你」· 一切从这里开始</span></figcaption>
         </figure>
         <figure class="g-card" data-gallery="father" role="button" tabindex="0" aria-label="载入送爸爸案例:爸爸背影">
-          <div class="g-img"><img src="./cases/father.jpg" alt="父子牵手剪影文字画「爸爸我爱你」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>送爸爸</b><span>「爸爸我爱你」· 感谢你撑起一片天</span></figcaption>
+          <div class="g-img"><img src="./cases/father.webp" alt="父子牵手剪影文字画「爸爸我爱你」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <figcaption><b>送爸爸</b><span>「爸爸我爱你」· 一路走来辛苦了</span></figcaption>
         </figure>
         <figure class="g-card" data-gallery="friend" role="button" tabindex="0" aria-label="载入送朋友案例:夯爆了">
-          <div class="g-img"><img src="./cases/friend.jpg" alt="朋友照片文字画「夯爆了」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <div class="g-img"><img src="./cases/friend.webp" alt="朋友照片文字画「夯爆了」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
           <figcaption><b>送朋友</b><span>「夯爆了」· 本来想恶搞你的</span></figcaption>
         </figure>
         <figure class="g-card" data-gallery="logoWood" role="button" tabindex="0" aria-label="载入送公司案例:秒思 Logo 木色雕刻版">
-          <div class="g-img"><img src="./cases/logo-wood.jpg" alt="秒思 Logo 木色文字画「秒思」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <div class="g-img"><img src="./cases/logo-wood.webp" alt="秒思 Logo 木色文字画「秒思」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
           <figcaption><b>送公司</b><span>「秒思」木色 · 打印可当木板雕刻稿</span></figcaption>
         </figure>
-        <figure class="g-card" data-gallery="avatar" role="button" tabindex="0" aria-label="载入送同事案例:卡通头像">
-          <div class="g-img"><img src="./cases/catfish.jpg" alt="小鲶鱼头像文字画「小鲶鱼」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>送同事</b><span>「小鲶鱼」· 下一张就是你的</span></figcaption>
-        </figure>
         <figure class="g-card" data-gallery="luffy" role="button" tabindex="0" aria-label="载入送爱好案例:路飞">
-          <div class="g-img"><img src="./cases/luffy.jpg" alt="路飞文字画「海贼王我当定了」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <div class="g-img"><img src="./cases/luffy.webp" alt="路飞文字画「海贼王我当定了」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
           <figcaption><b>送爱好</b><span>「喜欢的角色」· 用他的语录拼成他的形象</span></figcaption>
+        </figure>
+        <figure class="g-card" data-gallery="avatar" role="button" tabindex="0" aria-label="载入送同事案例:卡通头像">
+          <div class="g-img"><img src="./cases/catfish.webp" alt="小鲶鱼头像文字画「小鲶鱼」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <figcaption><b>送同事</b><span>「小鲶鱼」· 下一张就是你的</span></figcaption>
         </figure>
       </div>
     </section>

@@ -7,12 +7,10 @@
  * 仅有同源静态资源(字体分包/示例图)按需加载。
  */
 // 自托管字体:思源宋体(标题衬线)+ 霞鹜文楷(标语/印章楷体)。
-// 两套均为 unicode-range 分包 webfont,浏览器只下载页面真实用到的字块;
-// 随 dist 同源部署,访客系统没装这些字体也能还原设计,且不触任何第三方请求。
-import '@fontsource/noto-serif-sc/400.css'
-import '@fontsource/noto-serif-sc/700.css'
-import 'lxgw-wenkai-lite-webfont/lxgwwenkailite-regular.css'
-import 'lxgw-wenkai-lite-webfont/lxgwwenkailite-bold.css'
+// 按站点字符集子集化为 4 个小 woff2(public/fonts/,index.html 里已 preload),
+// 首屏字体从几十个 unicode-range 分包(~2MB)收敛为 4 个请求(~300KB),弱网不再拖加载;
+// 未收录字符自动回退系统字体栈,随 dist 同源部署,不触任何第三方请求。
+import './fonts.css'
 import './style.css'
 import { DEFAULT_PARAMS, computeLayout, paint, buildTextArt } from './engine.js'
 import { exportCanvasPNG, exportCanvasPDF, downloadText } from './exporter.js'
@@ -30,11 +28,11 @@ const FRESH_REVEAL_MS = 1100
 
 /** 一键示例(本地静态图,参数与 backend/cases.json 对齐;画廊案例一律原色渲染) */
 const SAMPLES = {
-  heart: { file: 'samples/heart.jpg', text: '某某我爱你', mode: 'color', boldEdges: true },
-  avatar: { file: 'samples/avatar.jpg', text: '小鲶鱼', mode: 'color', threshold: 175 },
+  heart: { file: 'samples/heart.webp', text: '某某我爱你', mode: 'color', boldEdges: true },
+  avatar: { file: 'samples/avatar.webp', text: '小鲶鱼', mode: 'color', threshold: 175 },
   // 故事案例:同一颗心能说给谁听
   father: {
-    file: 'samples/father.jpg',
+    file: 'samples/father.webp',
     text: '爸爸我爱你',
     mode: 'color',
     cols: 100,
@@ -46,7 +44,7 @@ const SAMPLES = {
     bgColor: '#fffdf9',
   },
   friend: {
-    file: 'samples/friend.jpg',
+    file: 'samples/friend.webp',
     text: '夯爆了',
     mode: 'color',
     cols: 100,
@@ -57,7 +55,7 @@ const SAMPLES = {
     brightness: 0.95,
   },
   logoWood: {
-    file: 'samples/logo.jpg',
+    file: 'samples/logo.webp',
     text: '秒思',
     mode: 'color',
     cols: 100,
@@ -66,7 +64,7 @@ const SAMPLES = {
     bgColor: '#e8d5a4',
   },
   luffy: {
-    file: 'samples/luffy.jpg',
+    file: 'samples/luffy.webp',
     text: '海贼王我当定了',
     mode: 'color',
     cols: 100,
@@ -80,7 +78,7 @@ const SAMPLES = {
 
 /** 参数预设(覆盖常见图片,现场互动兜底) */
 const PRESETS = {
-  photo: { threshold: 128, invert: false, boldEdges: false, contrast: 1, brightness: 1 },
+  photo: { mode: 'color', threshold: 170, invert: false, boldEdges: false, contrast: 1, brightness: 0.9 },
   cartoon: { threshold: 175, invert: false, boldEdges: false, contrast: 1, brightness: 1 },
   dark: { threshold: 110, invert: true, boldEdges: true, contrast: 1.15, brightness: 1 },
 }
@@ -243,7 +241,13 @@ function showSource() {
   els.photoSlot.setAttribute('aria-label', '更换图片')
 }
 
-async function handleFile(file) {
+/**
+ * 载入图片。
+ * fromSample=true:来自内置示例,参数已由 loadSample 配好,不重置;
+ * 用户主动上传(点击/拖拽/粘贴)则回到默认渲染口径——原色模式 + 阈值 170 + 亮度 0.9,
+ * 只保留已输入的那句话,避免上一次示例/预设的参数"串台"到新照片上。
+ */
+async function handleFile(file, { fromSample = false } = {}) {
   if (!file || !file.type.startsWith('image/')) {
     toast('请选择图片文件')
     return
@@ -278,6 +282,13 @@ async function handleFile(file) {
   state.source = source
   state.originalSource = source
   state.cropRect = null
+  // 用户主动换图:重置为默认参数(原色 + 阈值 170 + 亮度 0.9,保留那句话),
+  // 示例/预设调过的值不"串台"到新照片上
+  if (!fromSample) {
+    const keepText = state.params.text
+    state.params = { ...DEFAULT_PARAMS, text: keepText }
+    syncUI()
+  }
   state.fileName = (file.name || 'wordart').replace(/\.[^.]+$/, '') || 'wordart'
   state.fileLabel = file.name || state.fileName
   state.fresh = true
@@ -361,7 +372,7 @@ async function loadSample(key, scrollUp = false) {
       fgColor: s.fgColor || '#1a1a1a',
     })
     syncUI()
-    await handleFile(new File([blob], key, { type: blob.type }))
+    await handleFile(new File([blob], key, { type: blob.type }), { fromSample: true })
     toast('已载入案例,改成你的话试试')
     if (scrollUp) $('#studio').scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch {
@@ -377,10 +388,16 @@ function exportPNG(multiplier) {
   toast(multiplier > 1 ? '已导出 2x 高清 PNG' : '已导出 PNG')
 }
 
-function exportPDF() {
-  const art = paint(state.layout, state.params, 2)
-  exportCanvasPDF(art, `${safeName(state.fileName)}.pdf`)
-  toast('已导出 A4 PDF,打印即成品')
+async function exportPDF() {
+  // jsPDF 为懒加载 chunk,弱网首次导出可能要等一会儿,给个进度提示
+  toast('正在生成 PDF,首次导出需先加载组件…')
+  try {
+    const art = paint(state.layout, state.params, 2)
+    await exportCanvasPDF(art, `${safeName(state.fileName)}.pdf`)
+    toast('已导出 A4 PDF,打印即成品')
+  } catch {
+    toast('PDF 生成失败,请重试或改用 PNG 导出')
+  }
 }
 
 function exportTXT() {

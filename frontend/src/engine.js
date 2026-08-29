@@ -20,16 +20,16 @@ const ROW_HEIGHT_FACTOR = 1.08
 export const DEFAULT_PARAMS = {
   text: '某某我爱你',
   cols: 100, // 输出宽度(列数,决定分辨率)
-  mode: 'mono', // 渲染模式:mono=单色 / color=原色
+  mode: 'color', // 渲染模式:mono=单色 / color=原色(默认原色:案例口径统一,照片直出彩色)
   fgColor: '#1a1a1a',
   bgColor: '#ffffff',
   fontSize: 18,
   letterSpacing: 0,
-  threshold: 128, // 亮度阈值:低于阈值画字
+  threshold: 170, // 亮度阈值:低于阈值画字(实测 170 对多数照片/卡通都成立)
   invert: false, // 反转前景/背景(暗底亮图开)
   boldEdges: false, // 加粗边缘:明暗交界处强制画字并加粗
   contrast: 1,
-  brightness: 1,
+  brightness: 0.9,
 }
 
 /* ---------------- 基础工具 ---------------- */
