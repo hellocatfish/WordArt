@@ -33,25 +33,25 @@ WordArt/
 │   │   └── fonts.py         #   跨平台 CJK / 等宽字体定位
 │   ├── generate.py          # 单图 CLI(text / ascii / cloud 三种模式)
 │   ├── batch.py             # 批量生成:读 cases.json,单条失败不中断
-│   ├── cases.json           # 案例配置(6 条)
+│   ├── cases.json           # 案例配置(9 条)
 │   ├── make_demo_assets.py  # 生成自测演示图(球体/LOVE/心形)
 │   ├── requirements.txt     # pillow / numpy / wordcloud / ascii-magic
-│   ├── assets/demo/         # 输入图:sphere/love/heart.png + 头像.jpg + miaosilogo.jpg
-│   └── output/              # 成品输出(gitignore,手动上传腾讯云 COS)
+│   ├── assets/demo/         # 输入图:sphere/love/heart.png + 头像.jpg + miaosilogo.jpg + father.jpg + cat.jpg
+│   └── output/              # 成品输出(gitignore,不入库)
 │
 └── frontend/                # 浏览器应用(Vite 5 + 原生 JS + Canvas,运行时零框架)
     ├── README.md            # 前端说明:命令、功能、渲染口径
     ├── index.html           # 单页结构:工作区(预览 + 参数面板)+ 案例画廊
     ├── vite.config.js       # base './' 相对路径,任意静态目录可托管
-    ├── package.json         # 仅 jspdf + vite 两个依赖
+    ├── package.json         # jspdf + vite + 自托管字体包(@fontsource/noto-serif-sc、lxgw-wenkai-lite-webfont)
     ├── src/
     │   ├── engine.js        # 渲染引擎:与 Python 同口径(computeLayout/paint)
     │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出
     │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF)/ TXT
     │   └── style.css        # 样式
     └── public/
-        ├── samples/         # 一键示例图 4 张(球体/心形/头像/logo)
-        ├── cases/           # 画廊案例图(Python 管线产物的 web 版)
+        ├── samples/         # 一键示例图 7 张(球体/心形/头像/logo/love/爸爸背影/橘猫),随 dist 打包
+        ├── cases/           # 画廊案例图 6 张(送恋人/送爸爸/送自己/送公司/送同事/WordArt 暗底),随 dist 打包
         └── favicon.svg
 ```
 
@@ -89,7 +89,7 @@ npm run build                    # 产出 dist/ 纯静态站点
 npm run preview                  # 预览 dist;固定端口用 npx vite preview --port 4173 --strictPort
 ```
 
-`dist/` 因 `base './'` 相对路径,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。
+`dist/` 因 `base './'` 相对路径,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。全部资源(示例图/案例图/字体)同源随包,不依赖腾讯云 COS 等外链。字体为自托管 webfont:思源宋体(标题衬线,400/700)+ 霞鹜文楷(标语/印章楷体,400/700),均 unicode-range 分包,浏览器只下载页面真实用到的字块(实测首屏约 23 个分包);访客设备无需预装字体,Cloudflare Pages 部署后观感一致。
 
 ## 双引擎架构与渲染语义
 
@@ -166,7 +166,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 - `451f82a` 小鲶鱼头像案例(阈值 175)
 - `4eaf8a3` 前端浏览器应用(零上传纯前端)
 
-不进版本库:`backend/output/`(成品图,手动上传腾讯云 COS)、`dist/`、`node_modules/`、`.npm-cache/`。
+不进版本库:`backend/output/`(成品图)、`dist/`、`node_modules/`、`.npm-cache/`。
 
 ## 文档导航
 
@@ -182,6 +182,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 截至 2026-08-29 的进度:
 
 - 后端三条管线可用;`cases.json` 6 条案例(sphere / love_dark / heart_color / sphere_ascii / 小鲶鱼头像 / team_cloud)全部生成成功;秒思 logo 经 CLI 手动实测(阈值 215)效果确认
-- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;`dist/` 构建成功
-- spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署未做
-- 待办:部署 Cloudflare Pages、案例图上传腾讯云 COS 并替换直链、手机线上实测、PPT 与周日排练、赛后 09-01 仓库工程化整理
+- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;`dist/` 构建成功(主体为按需加载的字体分包);画廊定为 6 案故事卡「这份礼物,送给谁?」(送恋人 / 送爸爸 / 送自己 / 送公司 / 送同事 / WordArt 暗底),离线词云案例已移除;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/ 并手机实测通过
+- 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示(恋人合影+姓名 / 吉祥物+全员姓名 / 人物+语录 / 送礼 / 闲鱼变现 / 评委看现场跑产品),画廊 6 卡即讲述主线;案例图到此为止,不再新增
+- spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署已完成
+- 待办:把最新 dist(6 卡画廊版)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理
