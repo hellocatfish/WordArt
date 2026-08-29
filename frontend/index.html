@@ -100,10 +100,9 @@
                 <span class="sample-label">试试示例</span>
                 <button class="chip" type="button" data-sample="heart">心形</button>
                 <button class="chip" type="button" data-sample="father">爸爸</button>
-                <button class="chip" type="button" data-sample="cat">橘猫</button>
+                <button class="chip" type="button" data-sample="friend">朋友</button>
                 <button class="chip" type="button" data-sample="avatar">卡通头像</button>
-                <button class="chip" type="button" data-sample="logo">Logo</button>
-                <button class="chip" type="button" data-sample="sphere">球体</button>
+                <button class="chip" type="button" data-sample="logoWood">Logo</button>
               </div>
             </div>
 
@@ -113,6 +112,7 @@
                 <span class="num" aria-hidden="true">2</span>
                 <b>你想说的话</b>
               </div>
+              <p class="field-hint">选字建议:部分文字有些空、不稠密,需要选平替的字</p>
               <input type="text" id="param-text" placeholder="如:某某我爱你" maxlength="60" aria-label="自定义短语" />
               <p class="field-hint">这句话会平铺成整幅画,空格是留白</p>
             </div>
@@ -149,15 +149,15 @@
             <div class="param-section">
               <h3>排版</h3>
               <div class="slider-row">
-                <div class="slider-label"><span>输出宽度</span><output id="val-cols">100</output></div>
+                <div class="slider-label"><span>输出宽度</span><input class="val-edit" id="val-cols" type="text" inputmode="numeric" value="100" aria-label="输出宽度数值,可直接输入" /></div>
                 <input type="range" id="param-cols" min="40" max="300" step="2" value="100" aria-label="输出宽度(列数)" />
               </div>
               <div class="slider-row">
-                <div class="slider-label"><span>字号大小</span><output id="val-fs">18</output></div>
+                <div class="slider-label"><span>字号大小</span><input class="val-edit" id="val-fs" type="text" inputmode="numeric" value="18" aria-label="字号大小数值,可直接输入" /></div>
                 <input type="range" id="param-fs" min="8" max="36" step="1" value="18" aria-label="字号大小" />
               </div>
               <div class="slider-row">
-                <div class="slider-label"><span>字间距</span><output id="val-ls">0</output></div>
+                <div class="slider-label"><span>字间距</span><input class="val-edit" id="val-ls" type="text" inputmode="numeric" value="0" aria-label="字间距数值,可直接输入" /></div>
                 <input type="range" id="param-ls" min="0" max="16" step="1" value="0" aria-label="字间距" />
               </div>
             </div>
@@ -165,15 +165,15 @@
             <div class="param-section">
               <h3>明暗</h3>
               <div class="slider-row">
-                <div class="slider-label"><span>亮度阈值</span><output id="val-th">128</output></div>
+                <div class="slider-label"><span>亮度阈值</span><input class="val-edit" id="val-th" type="text" inputmode="numeric" value="128" aria-label="亮度阈值数值,可直接输入" /></div>
                 <input type="range" id="param-th" min="1" max="255" step="1" value="128" aria-label="亮度阈值" />
               </div>
               <div class="slider-row">
-                <div class="slider-label"><span>对比度</span><output id="val-ct">1.00</output></div>
+                <div class="slider-label"><span>对比度</span><input class="val-edit" id="val-ct" type="text" inputmode="decimal" value="1.00" aria-label="对比度数值,可直接输入" /></div>
                 <input type="range" id="param-ct" min="0.5" max="2.5" step="0.05" value="1" aria-label="对比度" />
               </div>
               <div class="slider-row">
-                <div class="slider-label"><span>亮度</span><output id="val-br">1.00</output></div>
+                <div class="slider-label"><span>亮度</span><input class="val-edit" id="val-br" type="text" inputmode="decimal" value="1.00" aria-label="亮度数值,可直接输入" /></div>
                 <input type="range" id="param-br" min="0.5" max="2.5" step="0.05" value="1" aria-label="亮度" />
               </div>
               <label class="switch-row"><span>反转前景/背景</span><input type="checkbox" id="param-invert" /><i class="switch" aria-hidden="true"></i></label>
@@ -250,23 +250,23 @@
         </figure>
         <figure class="g-card" data-gallery="father" role="button" tabindex="0" aria-label="载入送爸爸案例:爸爸背影">
           <div class="g-img"><img src="./cases/father.jpg" alt="父子牵手剪影文字画「爸爸我爱你」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>送爸爸</b><span>「爸爸我爱你」· 你想哪里去了</span></figcaption>
+          <figcaption><b>送爸爸</b><span>「爸爸我爱你」· 感谢你撑起一片天</span></figcaption>
         </figure>
-        <figure class="g-card" data-gallery="cat" role="button" tabindex="0" aria-label="载入送自己案例:橘猫">
-          <div class="g-img"><img src="./cases/cat.jpg" alt="橘猫文字画「陪我五年」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>送自己</b><span>「陪我五年」· 礼物非要送人吗</span></figcaption>
+        <figure class="g-card" data-gallery="friend" role="button" tabindex="0" aria-label="载入送朋友案例:夯爆了">
+          <div class="g-img"><img src="./cases/friend.jpg" alt="朋友照片文字画「夯爆了」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
+          <figcaption><b>送朋友</b><span>「夯爆了」· 本来想恶搞你的</span></figcaption>
         </figure>
         <figure class="g-card" data-gallery="logoWood" role="button" tabindex="0" aria-label="载入送公司案例:秒思 Logo 木色雕刻版">
           <div class="g-img"><img src="./cases/logo-wood.jpg" alt="秒思 Logo 木色文字画「秒思」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>送公司</b><span>「秒思」木色 · 打印即可当雕刻稿</span></figcaption>
+          <figcaption><b>送公司</b><span>「秒思」木色 · 打印可当木板雕刻稿</span></figcaption>
         </figure>
         <figure class="g-card" data-gallery="avatar" role="button" tabindex="0" aria-label="载入送同事案例:卡通头像">
           <div class="g-img"><img src="./cases/catfish.jpg" alt="小鲶鱼头像文字画「小鲶鱼」" loading="lazy" /><span class="g-load">载入这张 →</span></div>
           <figcaption><b>送同事</b><span>「小鲶鱼」· 下一张就是你的</span></figcaption>
         </figure>
-        <figure class="g-card" data-gallery="love" role="button" tabindex="0" aria-label="载入压轴案例:WordArt 暗底">
+        <figure class="g-card" data-gallery="love" role="button" tabindex="0" aria-label="载入更多创意案例:WordArt 暗底">
           <div class="g-img"><img src="./cases/love-dark.jpg" alt="WordArt 白字黑底文字画" loading="lazy" /><span class="g-load">载入这张 →</span></div>
-          <figcaption><b>还有谁?</b><span>「WordArt」· 最后一张,送它自己</span></figcaption>
+          <figcaption><b>更多创意</b><span>「WordArt」· 最后一张,送自己</span></figcaption>
         </figure>
       </div>
     </section>

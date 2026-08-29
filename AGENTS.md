@@ -36,7 +36,7 @@ WordArt/
 │   ├── cases.json           # 案例配置(9 条)
 │   ├── make_demo_assets.py  # 生成自测演示图(球体/LOVE/心形)
 │   ├── requirements.txt     # pillow / numpy / wordcloud / ascii-magic
-│   ├── assets/demo/         # 输入图:sphere/love/heart.png + 头像.jpg + miaosilogo.jpg + father.jpg + cat.jpg
+│   ├── assets/demo/         # 输入图:sphere/love/heart.png + 头像.jpg + miaosilogo.jpg + father.jpg + friend.jpg
 │   └── output/              # 成品输出(gitignore,不入库)
 │
 └── frontend/                # 浏览器应用(Vite 5 + 原生 JS + Canvas,运行时零框架)
@@ -51,8 +51,8 @@ WordArt/
     │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF)/ TXT
     │   └── style.css        # 样式:双主题(纸墨/夜航)+ 响应式(桌面通栏输入 banner / ≤960px 同屏双栏)
     └── public/
-        ├── samples/         # 一键示例图 7 张(球体/心形/头像/logo/love/爸爸背影/橘猫),随 dist 打包
-        ├── cases/           # 画廊案例图 6 张(送恋人/送爸爸/送自己/送公司/送同事/WordArt 暗底),随 dist 打包
+        ├── samples/         # 一键示例图 6 张(心形/头像/logo/love/爸爸背影/朋友),随 dist 打包
+        ├── cases/           # 画廊案例图 6 张(送恋人/送爸爸/送朋友/送公司/送同事/更多创意),随 dist 打包
         └── favicon.svg
 ```
 
@@ -124,7 +124,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | 文件 | 主要导出 | 说明 |
 |---|---|---|
 | `engine.js` | `DEFAULT_PARAMS`、`computeLayout()`、`paint()`、`buildTextArt()`、`CJK_FONT_STACK` | 渲染引擎,对应 Python 的 engine + sampling;`buildTextArt` 产纯文本供誊抄 |
-| `main.js` | (应用入口,无导出) | `SAMPLES` 七个一键示例(含 logo 阈值 215、avatar 阈值 175,与后端实测参数一致);`PRESETS` 三个参数预设;上传支持点击/拖拽/Ctrl+V 粘贴;参数变动 120ms 防抖重渲染;`state.originalSource` 永存原图,裁剪只改 `state.source` |
+| `main.js` | (应用入口,无导出) | `SAMPLES` 六个一键示例(心形/爸爸/朋友/卡通头像/Logo木色/暗底,画廊案例一律原色渲染,参数与 cases.json 对齐:爸爸 阈值145+亮度0.9、朋友 阈值200+对比度1.35+亮度0.95、avatar 阈值 175、logoWood 阈值 215);`PRESETS` 三个参数预设;上传支持点击/拖拽/Ctrl+V 粘贴;参数变动 120ms 防抖重渲染;滑杆右侧数值可点击直接输入(`bindRange` 的 `.val-edit`,回车/失焦提交、Esc 还原、越界自动收拢到滑杆范围并对齐步长);`state.originalSource` 永存原图,裁剪只改 `state.source` |
 | `cropper.js` | `openCropper({ url, image, rect, onApply })` | 非破坏性裁剪对话框:归一化裁剪框 {x,y,w,h}∈[0,1],8 手柄 + 框内拖动 + 方向键微调(Shift 加速),Pointer Events 单套逻辑通吃鼠标/触屏;AbortController 管会话事件,Esc/遮罩关闭并归还焦点。压暗语义:页面与对话框保持原亮度,`.crop-veil` 只盖图片本身,clip-path 随框挖孔(外圈顺时针+内圈逆时针的 nonzero 多边形),框外变灰框内亮色;框=全图时面积为零不压暗 |
 | `exporter.js` | `exportCanvasPNG()`、`exportCanvasPDF()`、`downloadText()`、`downloadBlob()` | jsPDF 打包进本地产物,无 CDN 依赖;PDF 自动横竖版、居中、12mm 边距 |
 
@@ -159,6 +159,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | npm 安装权限报错 | Windows 下全局缓存路径无写权限 | `npm install --cache .npm-cache`(项目本地缓存) |
 | `vite preview` 端口异常 | PowerShell 下端口参数被吞 | `npx vite preview --port 4173 --strictPort` 显式指定 |
 | cols 默认值不一致 | 前端 100、RenderParams 100、CLI 110 | 有意为之;cases.json 不写 cols 时走 CLI 默认 110,复现效果时留意 |
+| `vite build` 报 EBUSY | emptyDir 在 `rmdir dist/samples` 时 EBUSY:目录句柄被别的进程持有(编辑器文件监听/杀毒/索引),文件本身能删、只有目录删不掉 | 先用 node 脚本只删 dist 内所有文件(`fs.rmSync(force)`,保留目录壳),再 `npx vite build --emptyOutDir=false` 全新写入;残留的旧文件(sphere/橘猫等)顺带清干净 |
 
 ## Git 约定
 
@@ -182,12 +183,14 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 
 ## 当前状态与待办
 
-截至 2026-08-29 的进度:
+截至 2026-08-29 深夜的进度:
 
-- 后端三条管线可用;`cases.json` 6 条案例(sphere / love_dark / heart_color / sphere_ascii / 小鲶鱼头像 / team_cloud)全部生成成功;秒思 logo 经 CLI 手动实测(阈值 215)效果确认
-- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;`dist/` 构建成功(主体为按需加载的字体分包);画廊定为 6 案故事卡「这份礼物,送给谁?」(送恋人 / 送爸爸 / 送自己 / 送公司 / 送同事 / WordArt 暗底),离线词云案例已移除;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/ 并手机实测通过
-- 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;压暗只作用于图片本身(veil 挖孔方案),页面与对话框保持原亮度,桌面浏览器实测通过
-- 响应式布局重排(桌面 + 手机同一套叙事):桌面「创作输入」升为壹贰叁正下方的通栏 banner(`.col-input { display: contents }` 拆平分列,`.input-card` 跨 `grid-column: 1 / -1`),内部三层纵向堆叠——抬头 / 照片 / 一句话各自横向铺满,宽屏只放大呼吸感与一句话字号(17.5px),不改变层叠结构;手机(≤960px)改为输入通栏置顶 + 下方左「微调」右「成品」双栏同屏,成品卡 `sticky` 吸顶常驻,拖滑杆每刻结果都在眼前,不再上下来回滚动;614px 平板与 390px 手机、纸墨/夜航双主题均实测通过,控制台零报错
-- 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示(恋人合影+姓名 / 吉祥物+全员姓名 / 人物+语录 / 送礼 / 闲鱼变现 / 评委看现场跑产品),画廊 6 卡即讲述主线;案例图到此为止,不再新增
+- 后端三条管线可用;`cases.json` 9 条案例(demo_sphere / demo_love_dark / demo_heart_color / demo_sphere_ascii / 小鲶鱼头像 / 爸爸背影 / 朋友恶搞 / 秒思雕刻版 / demo_team_cloud)全部与前端 `SAMPLES` 参数对齐,故事案例一律 `color_mode: color`(爸爸:cols100+字号18+阈值145+亮度0.9;朋友:cols100+字号13+阈值200+对比度1.35+亮度0.95;秒思雕刻版:阈值215+木色前景/背景)
+- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;画廊 6 案故事卡「这份礼物,送给谁?」定稿:送恋人「某某我爱你」/ 送爸爸「爸爸我爱你」· 感谢你撑起一片天 / 送朋友「夯爆了」· 本来想恶搞你的 / 送公司「秒思」木色 · 打印可当木板雕刻稿 / 送同事「小鲶鱼」/ 更多创意「WordArt」· 最后一张,送自己;画廊与示例胶囊全部默认原色渲染,点击即载入全部参数;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/
+- 滑杆数值可直接输入:六个滑杆(输出宽度/字号/字间距/阈值/对比度/亮度)右侧数字为 `.val-edit` 输入框,点击输入、回车或失焦提交、Esc 还原,非法输入回退当前值,越界收拢到滑杆范围并对齐步长;提交幂等(Enter 直接 commit + blur 兜底,不依赖程序化 blur 是否派发事件)
+- 输入卡文案:照片上方「选图建议」保留,一句话输入框上方新增「选字建议:部分文字有些空、不稠密,需要选平替的字」;示例胶囊定为 心形/爸爸/朋友/卡通头像/Logo 五枚(橘猫、球体已删,素材同步移除)
+- 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;压暗只作用于图片本身(veil 挖孔方案),页面与对话框保持原亮度
+- 响应式布局重排(桌面 + 手机同一套叙事):桌面「创作输入」升为壹贰叁正下方的通栏 banner(`.col-input { display: contents }` 拆平分列,`.input-card` 跨 `grid-column: 1 / -1`);手机(≤960px)改为输入通栏置顶 + 下方左「微调」右「成品」双栏同屏,成品卡 `sticky` 吸顶常驻;614px 平板与 390px 手机、纸墨/夜航双主题均实测通过,控制台零报错
+- 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示,画廊 6 卡即讲述主线(送朋友是压轴互动位:现场给评委的朋友做一张);案例图到此为止,不再新增
 - spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署已完成
-- 待办:把最新 dist(响应式布局版:桌面通栏 banner + 手机同屏双栏)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理
+- 待办:把最新 dist(案例原色版 + 可输入数值 + 选字建议)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理

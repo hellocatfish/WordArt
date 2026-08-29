@@ -15,6 +15,7 @@
     "mode": "text",
     "cols": 110,
     "threshold": 120,
+    "color_mode": "color",
     "bg": "#0b0b12",
     "fg": "#f5f5f5",
     "invert": true,
@@ -43,7 +44,8 @@
     "text": "小鲶鱼",
     "mode": "text",
     "cols": 100,
-    "threshold": 175
+    "threshold": 175,
+    "color_mode": "color"
   },
   {
     "name": "爸爸背影",
@@ -51,19 +53,27 @@
     "text": "爸爸我爱你",
     "mode": "text",
     "cols": 100,
+    "font_size": 18,
+    "spacing": 0,
     "threshold": 145,
+    "color_mode": "color",
+    "contrast": 1.0,
+    "brightness": 0.9,
     "fg": "#26221b",
     "bg": "#fffdf9"
   },
   {
-    "name": "橘猫",
-    "image": "backend/assets/demo/cat.jpg",
-    "text": "陪我五年",
+    "name": "朋友恶搞",
+    "image": "backend/assets/demo/friend.jpg",
+    "text": "夯爆了",
     "mode": "text",
     "cols": 100,
-    "threshold": 150,
-    "fg": "#9c4312",
-    "bg": "#fff6ea"
+    "font_size": 13,
+    "spacing": 0,
+    "threshold": 200,
+    "color_mode": "color",
+    "contrast": 1.35,
+    "brightness": 0.95
   },
   {
     "name": "秒思雕刻版",
@@ -72,6 +82,7 @@
     "mode": "text",
     "cols": 100,
     "threshold": 215,
+    "color_mode": "color",
     "fg": "#33200d",
     "bg": "#e8d5a4"
   },

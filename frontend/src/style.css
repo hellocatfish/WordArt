@@ -760,10 +760,32 @@ input[type="color"] {
   margin-bottom: 4px;
 }
 
-.slider-label output {
-  font-variant-numeric: tabular-nums;
+/* 数值框:滑杆右侧数字可点击直接输入(回车/失焦提交,越界自动收拢) */
+.slider-label .val-edit {
+  width: 54px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
   color: var(--accent);
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.4;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.slider-label .val-edit:hover { background: var(--accent-soft); }
+
+.slider-label .val-edit:focus {
+  cursor: text;
+  border-color: var(--accent);
+  background: var(--field-bg);
+  box-shadow: 0 0 0 3px rgba(194, 64, 42, 0.12);
 }
 
 input[type="range"] {
@@ -1454,7 +1476,7 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
 
 /* 深底上的小号朱砂文字提亮一档,保住可读对比度 */
 [data-theme="night"] .link-btn,
-[data-theme="night"] .slider-label output,
+[data-theme="night"] .slider-label .val-edit,
 [data-theme="night"] .step i { color: var(--accent-dark); }
 
 [data-theme="night"] .step i { border-color: rgba(229, 107, 82, 0.36); }

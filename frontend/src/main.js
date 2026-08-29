@@ -28,32 +28,38 @@ const MAX_PREVIEW_DIM = 2048
 /** 新图载入后逐行书写动画时长(ms) */
 const FRESH_REVEAL_MS = 1100
 
-/** 一键示例(本地静态图,参数与 backend/cases.json 对齐) */
+/** 一键示例(本地静态图,参数与 backend/cases.json 对齐;画廊案例一律原色渲染) */
 const SAMPLES = {
-  sphere: { file: 'samples/sphere.jpg', text: '某某我爱你', cols: 90, threshold: 110, invert: true },
   heart: { file: 'samples/heart.jpg', text: '某某我爱你', mode: 'color', boldEdges: true },
-  avatar: { file: 'samples/avatar.jpg', text: '小鲶鱼', threshold: 175 },
-  logo: { file: 'samples/logo.jpg', text: '秒思', threshold: 215 },
+  avatar: { file: 'samples/avatar.jpg', text: '小鲶鱼', mode: 'color', threshold: 175 },
   // 故事案例:同一颗心能说给谁听
   father: {
     file: 'samples/father.jpg',
     text: '爸爸我爱你',
+    mode: 'color',
     cols: 100,
+    fontSize: 18,
+    letterSpacing: 0,
     threshold: 145,
+    brightness: 0.9,
     fgColor: '#26221b',
     bgColor: '#fffdf9',
   },
-  cat: {
-    file: 'samples/cat.jpg',
-    text: '陪我五年',
+  friend: {
+    file: 'samples/friend.jpg',
+    text: '夯爆了',
+    mode: 'color',
     cols: 100,
-    threshold: 150,
-    fgColor: '#9c4312',
-    bgColor: '#fff6ea',
+    fontSize: 13,
+    letterSpacing: 0,
+    threshold: 200,
+    contrast: 1.35,
+    brightness: 0.95,
   },
   logoWood: {
     file: 'samples/logo.jpg',
     text: '秒思',
+    mode: 'color',
     cols: 100,
     threshold: 215,
     fgColor: '#33200d',
@@ -62,6 +68,7 @@ const SAMPLES = {
   love: {
     file: 'samples/love.png',
     text: 'WordArt',
+    mode: 'color',
     cols: 110,
     threshold: 120,
     invert: true,
@@ -343,11 +350,13 @@ async function loadSample(key, scrollUp = false) {
       text: s.text,
       mode: s.mode || 'mono',
       cols: s.cols ?? state.params.cols,
+      fontSize: s.fontSize ?? state.params.fontSize,
+      letterSpacing: s.letterSpacing ?? state.params.letterSpacing,
       threshold: s.threshold ?? state.params.threshold,
       invert: s.invert ?? false,
       boldEdges: s.boldEdges ?? false,
-      contrast: 1,
-      brightness: 1,
+      contrast: s.contrast ?? 1,
+      brightness: s.brightness ?? 1,
       bgColor: s.bgColor || '#ffffff',
       fgColor: s.fgColor || '#1a1a1a',
     })
@@ -402,15 +411,48 @@ const syncFns = []
 function bindRange(inputId, key, valId, fmt = (v) => v) {
   const input = $('#' + inputId)
   const out = $('#' + valId)
+  const min = Number(input.min)
+  const max = Number(input.max)
+  const step = Number(input.step) || 1
+
   input.addEventListener('input', () => {
     state.params[key] = Number(input.value)
-    if (out) out.textContent = fmt(input.value)
+    if (out && document.activeElement !== out) out.value = fmt(input.value)
     paintRangeFill(input)
     scheduleRender()
   })
+
+  // 数值框直接输入:回车/失焦提交,非法输入回退当前值,越界收拢到滑杆范围并对齐步长
+  if (out) {
+    const commit = () => {
+      const raw = parseFloat(String(out.value).replace(/[^\d.]/g, ''))
+      let v = Number.isFinite(raw) ? raw : state.params[key]
+      v = Math.min(max, Math.max(min, Math.round(v / step) * step))
+      v = Number(v.toFixed(2))
+      const changed = v !== state.params[key]
+      state.params[key] = v
+      input.value = v
+      out.value = fmt(v)
+      paintRangeFill(input)
+      if (changed) scheduleRender()
+    }
+    out.addEventListener('blur', commit)
+    out.addEventListener('change', commit) // 兜底:个别环境 blur 事件可能不派发,change 与 blur 幂等
+    out.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        commit() // 直接提交,不依赖程序化 blur 是否派发事件;commit 幂等,重复调用无害
+        out.blur()
+      } else if (e.key === 'Escape') {
+        out.value = fmt(state.params[key]) // 放弃编辑,还原当前值
+        out.blur()
+      }
+    })
+  }
+
   syncFns.push(() => {
     input.value = state.params[key]
-    if (out) out.textContent = fmt(input.value)
+    if (out && document.activeElement !== out) out.value = fmt(input.value)
     paintRangeFill(input)
   })
 }
