@@ -33,7 +33,7 @@ const EDGE_SENSITIVITY = 36
 const ROW_HEIGHT_FACTOR = 1.08
 
 export const DEFAULT_PARAMS = {
-  text: '某某我爱你',
+  text: '小鲶鱼',
   cols: 100, // 输出宽度(列数,决定分辨率)
   mode: 'color', // 渲染模式:mono=单色 / color=原色(默认原色:案例口径统一,照片直出彩色)
   fgColor: '#1a1a1a',
