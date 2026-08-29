@@ -525,22 +525,26 @@ body {
 
 .preview-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* 画字字体切换:预览头内的紧凑分段控件(跟随 seg 变量,纸墨/夜航自动适配) */
-.font-switch {
+/* 画字字体切换:说明标签(独立,非按钮)+ 紧凑分段按钮组(跟随 seg 变量,纸墨/夜航自动适配) */
+.font-pick {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+}
+
+.font-label {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.font-switch {
+  display: inline-flex;
   gap: 2px;
   background: var(--seg-bg);
   border-radius: 999px;
   padding: 3px;
-}
-
-.font-switch .font-label {
-  font-size: 12px;
-  color: var(--muted);
-  padding: 0 7px 0 6px;
-  white-space: nowrap;
-  letter-spacing: 0.04em;
 }
 
 .font-switch button {
