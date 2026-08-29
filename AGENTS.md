@@ -40,19 +40,23 @@ WordArt/
 │   └── output/              # 成品输出(gitignore,不入库)
 │
 └── frontend/                # 浏览器应用(Vite 5 + 原生 JS + Canvas,运行时零框架)
-    ├── README.md            # 前端说明:命令、功能、渲染口径
-    ├── index.html           # 单页结构:工作区(预览 + 参数面板)+ 案例画廊
+    ├── README.md            # 前端说明:命令、功能、渲染口径、加载性能
+    ├── index.html           # 单页结构:工作区(预览 + 参数面板)+ 案例画廊;头部 4 个字体 preload
     ├── vite.config.js       # base './' 相对路径,任意静态目录可托管
-    ├── package.json         # jspdf + vite + 自托管字体包(@fontsource/noto-serif-sc、lxgw-wenkai-lite-webfont)
+    ├── package.json         # jspdf + vite(字体不依赖 npm 包,已预生成于 public/fonts/)
     ├── src/
     │   ├── engine.js        # 渲染引擎:与 Python 同口径(computeLayout/paint)
     │   ├── main.js          # 交互:上传/拖拽/粘贴、参数绑定、预设、导出
     │   ├── cropper.js       # 裁剪对话框:归一化裁剪框 + 8 手柄拖拽(Pointer Events)
-    │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF)/ TXT
+    │   ├── exporter.js      # 导出:PNG / A4 PDF(jsPDF 懒加载)/ TXT
+    │   ├── demo.js          # 空状态演示:内置心形 + 当前参数实时刷
+    │   ├── fonts.css        # @font-face:4 个子集化 woff2(指向 public/fonts/)
     │   └── style.css        # 样式:双主题(纸墨/夜航)+ 响应式(桌面通栏输入 banner / ≤960px 同屏双栏)
     └── public/
-        ├── samples/         # 一键示例图 6 张(心形/头像/logo/爸爸背影/朋友/luffy),随 dist 打包
-        ├── cases/           # 画廊案例图 6 张(送恋人/送爸爸/送朋友/送公司/送同事/送爱好),随 dist 打包
+        ├── fonts/           # 子集化字体 4 个 woff2(思源宋体/霞鹜文楷 × 400/700,共 ~715KB)
+        ├── samples/         # 一键示例图 6 张 WebP(心形/头像/logo/爸爸背影/朋友/luffy)
+        ├── cases/           # 画廊案例图 6 张 WebP(恋人/爸爸/朋友/公司/爱好/同事压轴)
+        ├── _headers         # Cloudflare Pages 缓存:assets/fonts 一年 immutable,samples/cases 7 天
         └── favicon.svg
 ```
 
@@ -90,7 +94,9 @@ npm run build                    # 产出 dist/ 纯静态站点
 npm run preview                  # 预览 dist;固定端口用 npx vite preview --port 4173 --strictPort
 ```
 
-`dist/` 因 `base './'` 相对路径,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。全部资源(示例图/案例图/字体)同源随包,不依赖腾讯云 COS 等外链。字体为自托管 webfont:思源宋体(标题衬线,400/700)+ 霞鹜文楷(标语/印章楷体,400/700),均 unicode-range 分包,浏览器只下载页面真实用到的字块(实测首屏约 23 个分包);访客设备无需预装字体,Cloudflare Pages 部署后观感一致。
+`dist/` 因 `base './'` 相对路径,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。全部资源(示例图/案例图/字体)同源随包,不依赖腾讯云 COS 等外链。字体为自托管 webfont:思源宋体(标题衬线,400/700)+ 霞鹜文楷(标语/印章楷体,400/700),按站点字符集(页面文案 + ASCII + 常用姓氏/称谓/祝福语,思源宋体 400 额外收录常用输入字)子集化为 4 个 woff2 存于 `public/fonts/`(共 ~715KB),`index.html` 头部 preload、`src/fonts.css` 声明 @font-face,构建时被 base './' 重写为相对路径;手机弱网首屏字体从 ~2MB/几十个请求收敛到 4 个请求,未收录字符自动回退系统字体栈,访客设备无需预装字体。
+
+移动端加载提速口径(2026-08-29 定稿,针对手机 Safari 实测偏慢):字体子集化(上段);案例图/示例图全部转 WebP(cases 760px q72 共 ~558KB 画廊展示用、samples 1400px q85 共 ~190KB 渲染输入用,`loading="lazy"` 按需拉);jsPDF + html2canvas 拆为点击「导出 PDF」时才加载的懒 chunk(首屏 JS ~173KB/gzip ~60KB,PDF 组件 ~560KB 不占首屏);`public/_headers` 配 Cloudflare Pages 缓存(assets/fonts 一年 immutable,案例/示例图 7 天,回访近零请求)。注意事项:字体文件名固定、内容变更时需改文件名破缓存(如加 `-v2`);`_headers` 只在 Cloudflare Pages 生效,其他托管平台自行配等价缓存头。
 
 ## 双引擎架构与渲染语义
 
@@ -100,7 +106,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 
 1. BT.601 亮度:`0.299R + 0.587G + 0.114B`,采样成 cols×rows 格子矩阵
 2. 预处理:对比度/亮度(Python 走 `ImageEnhance`,JS 以网格均值为轴,语义近似)
-3. 阈值掩码:亮度低于阈值(默认 128)的格子画字;`invert` 时反转
+3. 阈值掩码:亮度低于阈值的格子画字(前端默认口径:原色模式 + 阈值 170 + 亮度 0.9,上传新图自动回到该口径;Python `RenderParams` 默认 128,复现前端效果需显式传参);`invert` 时反转
 4. 边缘检测:一阶差分 `gx + gy > 36` 判定明暗交界;开"加粗边缘"时这些格子强制画字并描边加粗——这是"打印后 3 米外可辨认原图"验收项的关键
 5. 短语平铺:从短语逐字取字填格,空格保留为呼吸位;行高 = 字号 × 1.08(CJK 方块字加 8% 余量)
 
@@ -124,9 +130,9 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | 文件 | 主要导出 | 说明 |
 |---|---|---|
 | `engine.js` | `DEFAULT_PARAMS`、`computeLayout()`、`paint()`、`buildTextArt()`、`CJK_FONT_STACK` | 渲染引擎,对应 Python 的 engine + sampling;`buildTextArt` 产纯文本供誊抄 |
-| `main.js` | (应用入口,无导出) | `SAMPLES` 六个一键示例(心形/爸爸/朋友/卡通头像/Logo木色/暗底,画廊案例一律原色渲染,参数与 cases.json 对齐:爸爸 阈值145+亮度0.9、朋友 阈值200+对比度1.35+亮度0.95、avatar 阈值 175、logoWood 阈值 215);`PRESETS` 三个参数预设;上传支持点击/拖拽/Ctrl+V 粘贴;参数变动 120ms 防抖重渲染;滑杆右侧数值可点击直接输入(`bindRange` 的 `.val-edit`,回车/失焦提交、Esc 还原、越界自动收拢到滑杆范围并对齐步长);`state.originalSource` 永存原图,裁剪只改 `state.source` |
+| `main.js` | (应用入口,无导出) | `SAMPLES` 六个一键示例(心形/爸爸/朋友/卡通头像/Logo木色/暗底,画廊案例一律原色渲染,参数与 cases.json 对齐:爸爸 阈值145+亮度0.9、朋友 阈值200+对比度1.35+亮度0.95、avatar 阈值 175、logoWood 阈值 215);`PRESETS` 三个参数预设(照片标准 = 原色 + 阈值 170 + 亮度 0.9,与默认口径一致);上传支持点击/拖拽/Ctrl+V 粘贴,用户主动换图时重置回默认口径(原色 + 阈值 170 + 亮度 0.9,保留已输入的那句话,示例/预设参数不串台);参数变动 120ms 防抖重渲染;滑杆右侧数值可点击直接输入(`bindRange` 的 `.val-edit`,回车/失焦提交、Esc 还原、越界自动收拢到滑杆范围并对齐步长);`state.originalSource` 永存原图,裁剪只改 `state.source` |
 | `cropper.js` | `openCropper({ url, image, rect, onApply })` | 非破坏性裁剪对话框:归一化裁剪框 {x,y,w,h}∈[0,1],8 手柄 + 框内拖动 + 方向键微调(Shift 加速),Pointer Events 单套逻辑通吃鼠标/触屏;AbortController 管会话事件,Esc/遮罩关闭并归还焦点。压暗语义:页面与对话框保持原亮度,`.crop-veil` 只盖图片本身,clip-path 随框挖孔(外圈顺时针+内圈逆时针的 nonzero 多边形),框外变灰框内亮色;框=全图时面积为零不压暗 |
-| `exporter.js` | `exportCanvasPNG()`、`exportCanvasPDF()`、`downloadText()`、`downloadBlob()` | jsPDF 打包进本地产物,无 CDN 依赖;PDF 自动横竖版、居中、12mm 边距 |
+| `exporter.js` | `exportCanvasPNG()`、`exportCanvasPDF()`、`downloadText()`、`downloadBlob()` | jsPDF 懒加载:点「导出 PDF」才 `import('jspdf')`,主 bundle 不含它(首屏提速关键,弱网首次导出有 toast 提示);无 CDN 依赖;PDF 自动横竖版、居中、12mm 边距 |
 
 ## 参数对应表
 
@@ -147,7 +153,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | 对比度 | `contrast` | `contrast` | `--contrast` | `contrast` |
 | 亮度 | `brightness` | `brightness` | `--brightness` | `brightness` |
 
-调参经验(实测):白底卡通/Logo 类阈值取 175-215(小鲶鱼头像 175,秒思 logo 215);暗底亮图(夜景合影)开 `invert` 加 `bold-edges`;整体发灰先拉 `contrast 1.3`;高饱和动漫亮图(路飞)压 `brightness 0.6` + 提 `contrast 1.2` + 阈值 155,让亮色衣服和背景沉下来、轮廓立起来。
+调参经验(实测):默认口径(原色 + 阈值 170 + 亮度 0.9)对多数照片直出可用;白底卡通/Logo 类阈值取 175-215(小鲶鱼头像 175,秒思 logo 215);暗底亮图(夜景合影)开 `invert` 加 `bold-edges`;整体发灰先拉 `contrast 1.3`;高饱和动漫亮图(路飞)压 `brightness 0.6` + 提 `contrast 1.2` + 阈值 155,让亮色衣服和背景沉下来、轮廓立起来。
 
 ## 踩坑记录
 
@@ -160,6 +166,7 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 | `vite preview` 端口异常 | PowerShell 下端口参数被吞 | `npx vite preview --port 4173 --strictPort` 显式指定 |
 | cols 默认值不一致 | 前端 100、RenderParams 100、CLI 110 | 有意为之;cases.json 不写 cols 时走 CLI 默认 110,复现效果时留意 |
 | `vite build` 报 EBUSY | emptyDir 在 `rmdir dist/samples` 时 EBUSY:目录句柄被别的进程持有(编辑器文件监听/杀毒/索引),文件本身能删、只有目录删不掉 | 先用 node 脚本只删 dist 内所有文件(`fs.rmSync(force)`,保留目录壳),再 `npx vite build --emptyOutDir=false` 全新写入;残留的旧文件(sphere/橘猫等)顺带清干净 |
+| dist 未清空堆积旧产物 | vite emptyOutDir 偶发没执行(Windows 长路径警告环境下),旧 fontsource 字体(390 个 woff2/23MB)与旧 jpg 混进新 dist,网站看似没瘦身 | 构建前手动删掉整个 dist 目录再 `vite build`;构建后核对 dist 树:assets 仅 6 个文件、fonts 4 个、cases/samples 各 6 个 webp、根目录含 `_headers` |
 
 ## Git 约定
 
@@ -186,11 +193,13 @@ npm run preview                  # 预览 dist;固定端口用 npx vite preview 
 截至 2026-08-29 深夜的进度:
 
 - 后端三条管线可用;`cases.json` 9 条案例(demo_sphere / 路飞语录 / demo_heart_color / demo_sphere_ascii / 小鲶鱼头像 / 爸爸背影 / 朋友恶搞 / 秒思雕刻版 / demo_team_cloud)全部与前端 `SAMPLES` 参数对齐,故事案例一律 `color_mode: color`(爸爸:cols100+字号18+阈值145+亮度0.9;朋友:cols100+字号13+阈值200+对比度1.35+亮度0.95;秒思雕刻版:阈值215+木色前景/背景;路飞:cols100+字号18+阈值155+对比度1.2+亮度0.6,动漫亮图压亮度提对比的典型调法)
-- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;画廊 6 案故事卡「这份礼物,送给谁?」定稿:送恋人「某某我爱你」/ 送爸爸「爸爸我爱你」· 感谢你撑起一片天 / 送朋友「夯爆了」· 本来想恶搞你的 / 送公司「秒思」木色 · 打印可当木板雕刻稿 / 送同事「小鲶鱼」/ 送爱好「喜欢的角色」· 用他的语录拼成他的形象(路飞「海贼王我当定了」);画廊与示例胶囊全部默认原色渲染,点击即载入全部参数;字体自托管完成(思源宋体 + 霞鹜文楷),案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/
+- 前端上传、参数面板、实时渲染、四类导出(PNG / 2x / A4 PDF / TXT + 复制)浏览器实测通过,网络面板确认零上传;画廊 6 案故事卡「这份礼物,送给谁?」定稿(按讲述顺序):送恋人「某某我爱你」· 一切从这里开始 / 送爸爸「爸爸我爱你」· 一路走来辛苦了 / 送朋友「夯爆了」· 本来想恶搞你的 / 送公司「秒思」木色 · 打印可当木板雕刻稿 / 送爱好「喜欢的角色」· 用他的语录拼成他的形象(路飞「海贼王我当定了」)/ 送同事「小鲶鱼」· 下一张就是你的(压轴互动位);画廊与示例胶囊全部默认原色渲染,点击即载入全部参数;案例图与示例图全部同源随包,不外链 COS;已部署 https://muse-wordart.pages.dev/
+- 默认渲染口径定稿:上传新图默认原色模式 + 亮度阈值 170 + 亮度 0.9(`engine.js` DEFAULT_PARAMS、`index.html` 初值、「照片标准」预设、上传重置四处一致),多数照片零调参直出;用户主动换图自动回到该口径并保留已输入的那句话,示例/预设参数不串台
 - 滑杆数值可直接输入:六个滑杆(输出宽度/字号/字间距/阈值/对比度/亮度)右侧数字为 `.val-edit` 输入框,点击输入、回车或失焦提交、Esc 还原,非法输入回退当前值,越界收拢到滑杆范围并对齐步长;提交幂等(Enter 直接 commit + blur 兜底,不依赖程序化 blur 是否派发事件)
 - 输入卡文案:照片上方「选图建议」保留,一句话输入框上方新增「选字建议:部分文字有些空、不稠密,需要选平替的字」;示例胶囊定为 心形/爸爸/朋友/卡通头像/Logo 五枚(橘猫、球体已删,素材同步移除)
 - 裁剪小工具上线(选图建议的可执行版):图片框右上角「裁剪」胶囊常驻,打开对话框后 8 手柄拖拽收近主体;非破坏性——原图与裁剪框分别存在 `originalSource`/`cropRect`,可反复重裁、可还原全图;裁剪在本地 Canvas 截取,零上传红线不受影响;压暗只作用于图片本身(veil 挖孔方案),页面与对话框保持原亮度
 - 响应式布局重排(桌面 + 手机同一套叙事):桌面「创作输入」升为壹贰叁正下方的通栏 banner(`.col-input { display: contents }` 拆平分列,`.input-card` 跨 `grid-column: 1 / -1`);手机(≤960px)改为输入通栏置顶 + 下方左「微调」右「成品」双栏同屏,成品卡 `sticky` 吸顶常驻;614px 平板与 390px 手机、纸墨/夜航双主题均实测通过,控制台零报错
+- 移动端加载提速(手机 Safari 实测偏慢的对策,2026-08-29 完成):字体按站点字符集子集化为 4 个 woff2(~715KB、preload、font-display: swap,替代 ~2MB 的 fontsource unicode-range 分包,fontsource 依赖已从 package.json 移除);案例图/示例图转 WebP(cases 760px q72 共 ~558KB、samples 1400px q85 共 ~190KB,替代原 ~935KB jpg);jsPDF + html2canvas 拆为懒加载 chunk(首屏 JS ~173KB/gzip ~60KB);`public/_headers` 配 Cloudflare Pages 缓存(assets/fonts 一年 immutable、图片 7 天);dist 手动清空后重建,总产物 2.2MB;`vite preview` 冒烟实测:字体 4 个全加载、画廊 WebP 全就位、案例点击载入正常、控制台零报错
 - 展示策略:不做 PPT,周日下午 5 分钟按目标用户矩阵现场活演示,画廊 6 卡即讲述主线(送朋友是压轴互动位:现场给评委的朋友做一张);案例图到此为止,不再新增
 - spec.md 对照:F1-F5、F8(复制纯文本)、F9(互动实时重渲染)已落地;F7 未按"预设字符集"实现,改为参数预设(照片标准 / 白底卡通 / 暗底夜景)+ 一键示例;F6 部署已完成
-- 待办:把最新 dist(案例原色版 + 可输入数值 + 选字建议)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理
+- 待办:把最新 dist(默认原色/阈值170/亮度0.9 + 字体子集化 + WebP + 懒加载 + 缓存头)重新部署到 Cloudflare Pages、周日现场活演示排练、赛后 09-01 仓库工程化整理;提示:墙内访问 pages.dev 受 Cloudflare 中国节点限制,代码侧优化已到头,若现场网络仍慢可提前把 dist 拷到本地双击 `index.html` 兜底(全静态、可离线)

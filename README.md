@@ -10,18 +10,18 @@
 
 | 送恋人 | 送爸爸 |
 |---|---|
-| <img src="frontend/public/cases/heart-color.jpg" width="380" alt="心形文字画案例"> | <img src="frontend/public/cases/father.jpg" width="380" alt="爸爸背影文字画案例"> |
-| 「某某我爱你」· 一切从这里开始 | 「爸爸我爱你」· 你想哪里去了 |
+| <img src="frontend/public/cases/heart-color.webp" width="380" alt="心形文字画案例"> | <img src="frontend/public/cases/father.webp" width="380" alt="爸爸背影文字画案例"> |
+| 「某某我爱你」· 一切从这里开始 | 「爸爸我爱你」· 一路走来辛苦了 |
 
-| 送自己 | 送公司 |
+| 送朋友 | 送公司 |
 |---|---|
-| <img src="frontend/public/cases/cat.jpg" width="380" alt="橘猫文字画案例"> | <img src="frontend/public/cases/logo-wood.jpg" width="380" alt="Logo 木色文字画案例"> |
-| 「陪我五年」· 礼物非要送人吗 | 「秒思」木色 · 打印即可当雕刻稿 |
+| <img src="frontend/public/cases/friend.webp" width="380" alt="朋友照片文字画案例"> | <img src="frontend/public/cases/logo-wood.webp" width="380" alt="Logo 木色文字画案例"> |
+| 「夯爆了」· 本来想恶搞你的 | 「秒思」木色 · 打印可当木板雕刻稿 |
 
-| 送同事 | 暗底风格 |
+| 送爱好 | 送同事 |
 |---|---|
-| <img src="frontend/public/cases/catfish.jpg" width="380" alt="卡通头像文字画案例"> | <img src="frontend/public/cases/love-dark.jpg" width="380" alt="暗底文字画案例"> |
-| 「小鲶鱼」· 下一张就是你的 | 「WordArt」· 最后一张,送它自己 |
+| <img src="frontend/public/cases/luffy.webp" width="380" alt="路飞文字画案例"> | <img src="frontend/public/cases/catfish.webp" width="380" alt="卡通头像文字画案例"> |
+| 「喜欢的角色」· 用他的语录拼成他的形象 | 「小鲶鱼」· 下一张就是你的 |
 
 ## 三步成礼
 
@@ -29,7 +29,7 @@
 2. **写一句想说的话**:这句话会平铺成整幅画,空格是留白
 3. **打印装裱送出**:A4 PDF 直出,300 DPI,3 米外仍认得出原图
 
-参数拿不准就用预设:照片标准 / 白底卡通 · Logo / 暗底 · 夜景,一键切换。所有滑块实时生效,拖动即见效果。
+默认参数(原色模式、亮度阈值 170、亮度 0.9)对多数照片直接可用,上传即出图;拿不准再用预设:照片标准 / 白底卡通 · Logo / 暗底 · 夜景,一键切换。所有滑块实时生效,拖动即见效果,右侧数值也可点击直接输入。
 
 ## 界面:电脑手机都顺手
 
@@ -51,7 +51,7 @@
 4. **短语平铺**:从短语逐字取字填格,空格保留为呼吸位;行高按 CJK 方块字加 8% 余量
 5. **矢量导出**:导出时格子矩阵不变、字号等比放大,因此 2x 高清不发糊
 
-调参经验:白底卡通 / Logo 类阈值取 175–215;暗底亮图开"反转"加"加粗边缘";整体发灰先把对比度拉到 1.3。
+调参经验:默认口径(原色 + 阈值 170 + 亮度 0.9)多数照片直出可用;白底卡通 / Logo 类阈值取 175–215;暗底亮图开"反转"加"加粗边缘";整体发灰先把对比度拉到 1.3。
 
 ## 本地运行
 
@@ -64,7 +64,9 @@ npm run dev        # 开发: http://localhost:5173
 npm run build      # 产出 dist/ 纯静态站点
 ```
 
-`dist/` 因相对路径配置,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。字体自托管(思源宋体 + 霞鹜文楷),访客设备无需预装字体,部署后观感一致。
+`dist/` 因相对路径配置,可直接托管到 Cloudflare Pages / 任意静态目录,断网双击 `index.html` 也能用。字体自托管(思源宋体 + 霞鹜文楷,按站点字符集子集化为 4 个 woff2 并 preload),访客设备无需预装字体,部署后观感一致。
+
+移动端加载已专项优化:首屏 HTML + CSS + JS 共约 74KB(gzip)、字体 4 个请求共 ~715KB(`font-display: swap` 不阻塞渲染)、PDF 组件约 560KB 点击导出时才下载、案例/示例图全部 WebP 且懒加载、静态资源走长缓存(`public/_headers`)——总产物 2.2MB,弱网回访近零请求。
 
 ### 后端(Python 离线管线,批量出图用)
 
