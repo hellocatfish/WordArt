@@ -525,6 +525,48 @@ body {
 
 .preview-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+/* 画字字体切换:预览头内的紧凑分段控件(跟随 seg 变量,纸墨/夜航自动适配) */
+.font-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--seg-bg);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.font-switch .font-label {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 7px 0 6px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.font-switch button {
+  border: 0;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--muted);
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.font-switch button:hover:not(.active) { color: var(--ink); }
+
+.font-switch button.active {
+  background: var(--seg-active-bg);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--seg-active-shadow);
+}
+
+/* 手写字体下载中:按钮出态提示,避免误以为无响应 */
+.font-switch button.loading { opacity: 0.55; cursor: progress; }
+
 .status {
   display: flex;
   align-items: center;

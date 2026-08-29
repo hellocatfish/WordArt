@@ -16,6 +16,7 @@ import { DEFAULT_PARAMS, computeLayout, paint, buildTextArt } from './engine.js'
 import { exportCanvasPNG, exportCanvasPDF, downloadText } from './exporter.js'
 import { startDemo, refreshDemo, stopDemo, revealDraw, stopReveal } from './demo.js'
 import { openCropper } from './cropper.js'
+import { ensureFont, applyFont, storedFontKey, FONT_DEFS } from './fonts.js'
 
 const $ = (s) => document.querySelector(s)
 const $$ = (s) => [...document.querySelectorAll(s)]
@@ -700,6 +701,70 @@ function bindCompare() {
   btn.addEventListener('contextmenu', (e) => e.preventDefault()) // 触屏长按不弹菜单
 }
 
+/* ---------------- 画字字体切换(COS 手写字体 / 系统) ---------------- */
+
+/** 同步切换按钮高亮态 */
+function syncFontUI(key) {
+  $$('#font-switch button').forEach((b) =>
+    b.classList.toggle('active', b.dataset.font === key)
+  )
+}
+
+/**
+ * 点击某档字体:先按需加载(首次 ~4MB),成功后再应用并重渲染。
+ * 下载期间按钮给 loading 态;失败自动回退系统字体并 toast 说明。
+ */
+async function switchFont(key) {
+  const btn = $(`#font-switch button[data-font="${key}"]`)
+  const isSystem = key === 'system'
+  if (isSystem) {
+    applyFont('system')
+    syncFontUI('system')
+    scheduleRender()
+    return
+  }
+  if (!btn) return
+  btn.classList.add('loading')
+  btn.disabled = true
+  const ok = await ensureFont(key)
+  btn.classList.remove('loading')
+  btn.disabled = false
+  if (!ok) {
+    applyFont('system')
+    syncFontUI('system')
+    scheduleRender()
+    toast('手写字体加载失败,已回退系统字体')
+    return
+  }
+  applyFont(key)
+  syncFontUI(key)
+  scheduleRender()
+  toast(`已切换为${FONT_DEFS[key]?.label || ''}手写体`)
+}
+
+function bindFonts() {
+  const group = $('#font-switch')
+  if (!group) return
+  // 恢复上次偏好(不阻塞首屏;选中态先落位,字体异步加载成功后再生效)
+  const saved = storedFontKey()
+  syncFontUI(saved)
+  applyFont(saved)
+  if (saved !== 'system') {
+    ensureFont(saved).then((ok) => {
+      if (ok) scheduleRender() // 字体就绪后刷新一次,让预览用上手写字体
+      else {
+        applyFont('system')
+        syncFontUI('system')
+      }
+    })
+  }
+  group.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-font]')
+    if (!btn || btn.disabled) return
+    switchFont(btn.dataset.font)
+  })
+}
+
 /* ---------------- 启动 ---------------- */
 
 function bindExports() {
@@ -714,6 +779,7 @@ bindAll()
 bindUpload()
 bindExports()
 bindCompare()
+bindFonts()
 syncUI()
 setExportEnabled(false)
 startDemo(els.preview, () => state.params)

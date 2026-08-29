@@ -12,6 +12,21 @@
 export const CJK_FONT_STACK =
   '"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif'
 
+/**
+ * 画字字体栈:默认系统黑体;切换到 COS 手写字体(杨任东竹石体 / 沐瑶随心手写体)时,
+ * 由 fonts.js 调用 setCJKFontStack 把该手写字体家族排到栈首,未收录字符仍回退系统字体。
+ * paint() 读取当前值,因此预览与导出(1x/2x/PDF)会自然使用同一种画字字体。
+ */
+let activeFontStack = CJK_FONT_STACK
+
+export function setCJKFontStack(stack) {
+  activeFontStack = stack || CJK_FONT_STACK
+}
+
+export function getCJKFontStack() {
+  return activeFontStack
+}
+
 /** 边缘判定灵敏度,与 Python 端 edge_grid(sensitivity=36) 一致 */
 const EDGE_SENSITIVITY = 36
 /** CJK 方块字行高余量,避免上下行贴死(Python 端 _ROW_HEIGHT_FACTOR) */
@@ -171,7 +186,7 @@ export function paint(layout, params, scale = 1, maxDim = 4096) {
   const bgLight = lumOf(bg.r, bg.g, bg.b) >= 128
   const strokeW = Math.max(1, fs / 14)
 
-  ctx.font = `${fs}px ${CJK_FONT_STACK}`
+  ctx.font = `${fs}px ${activeFontStack}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
