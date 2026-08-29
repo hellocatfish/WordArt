@@ -1,0 +1,44 @@
+/**
+ * 自托管字体(按字符集子集化)。
+ *
+ * 思源宋体(标题衬线)+ 霞鹜文楷(标语/印章楷体)各两个字重,
+ * 只保留站点真实用到的字符集(见 tools/build-fonts.mjs 的口径),
+ * 单个 woff2 从 40-60KB 的 unicode-range 分包方案收敛为 4 个小文件,
+ * 手机弱网首屏字体总量从 ~2MB 降到 ~300KB,请求数从几十个降到 4 个。
+ *
+ * 字体文件放 public/fonts/(随 dist 原样拷贝,文件名固定),
+ * 这里用绝对路径引用;vite 相对 base('./')构建时会重写为正确相对路径。
+ * font-display: swap —— 字体到达前用系统字体先渲染,不阻塞首屏。
+ * 未收录的字符(如用户临时输入的生僻字)自动回退系统字体栈,不影响使用。
+ */
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/noto-serif-sc-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Serif SC';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/noto-serif-sc-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'LXGW WenKai Lite';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lxgw-wenkai-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'LXGW WenKai Lite';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lxgw-wenkai-700.woff2') format('woff2');
+}

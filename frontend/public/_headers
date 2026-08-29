@@ -1,0 +1,15 @@
+# Cloudflare Pages 缓存策略:
+# - /assets/* 与 /fonts/* 内容带 hash 或极少变化 → 一年 immutable,回访零请求
+# - /samples/* /cases/* 文件名固定但更新少 → 7 天,兼顾回访速度与更新生效
+# - index.html 走默认(etag 协商),保证部署后立即拿到新版本
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/samples/*
+  Cache-Control: public, max-age=604800
+
+/cases/*
+  Cache-Control: public, max-age=604800

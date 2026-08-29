@@ -1,8 +1,10 @@
 /**
  * 导出:PNG / 单页 A4 PDF(jsPDF)/ 纯文本 TXT。
  * 全部在浏览器本地完成,无任何上传。
+ *
+ * jsPDF 体积大(主 chunk 因它膨胀到 ~370KB),而 PNG/TXT 导出根本用不到——
+ * 改为点击「导出 PDF」时才动态 import,首屏 JS 因此小一个量级(弱网提速关键)。
  */
-import { jsPDF } from 'jspdf'
 
 export function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob)
@@ -22,7 +24,8 @@ export function exportCanvasPNG(canvas, filename) {
 }
 
 /** 画布 → 单页 A4 PDF:自动横竖版、居中、12mm 页边距,打印即成品。 */
-export function exportCanvasPDF(canvas, filename) {
+export async function exportCanvasPDF(canvas, filename) {
+  const { jsPDF } = await import('jspdf') // 懒加载:仅首次导出 PDF 时拉取该 chunk
   const landscape = canvas.width > canvas.height
   const pdf = new jsPDF({
     orientation: landscape ? 'landscape' : 'portrait',
