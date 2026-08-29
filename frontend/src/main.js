@@ -706,13 +706,16 @@ function bindCompare() {
 const fontProgress = $('#font-progress')
 const fontProgressBar = $('#font-progress-bar')
 const fontProgressText = $('#font-progress-text')
+/** 当前下载中的字体名,进度文字始终带"下载中"提示,让人明白进度条在做什么 */
+let fontProgressLabel = ''
 
 /** 显示字体下载进度条:先进入不确定态,收到真实进度后切百分比 */
 function showFontProgress(label) {
   if (!fontProgress) return
+  fontProgressLabel = label || '字体'
   fontProgress.hidden = false
   fontProgress.classList.add('indeterminate')
-  if (fontProgressText) fontProgressText.textContent = `${label}下载中…`
+  if (fontProgressText) fontProgressText.textContent = `${fontProgressLabel}下载中…`
   if (fontProgressBar) fontProgressBar.style.transform = 'scaleX(0)'
 }
 
@@ -722,13 +725,14 @@ function updateFontProgress(p) {
   fontProgress.classList.remove('indeterminate')
   const pct = Math.max(0, Math.min(100, Math.round(p * 100)))
   if (fontProgressBar) fontProgressBar.style.transform = `scaleX(${p})`
-  if (fontProgressText) fontProgressText.textContent = `${pct}%`
+  if (fontProgressText) fontProgressText.textContent = `${fontProgressLabel}下载中 ${pct}%`
 }
 
 function hideFontProgress() {
   if (!fontProgress) return
   fontProgress.hidden = true
   fontProgress.classList.remove('indeterminate')
+  fontProgressLabel = ''
 }
 
 /** 同步切换按钮高亮态 */
