@@ -1176,6 +1176,22 @@ input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba
   margin-top: 6px;
 }
 
+/* 页脚源码链接:弱化为背景文字级别,双主题自动适配,悬停浮现强调色 */
+.foot-src { margin-top: 8px; }
+.foot-src a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--muted);
+  padding-bottom: 1px;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.foot-src a:hover,
+.foot-src a:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+
 /* ============ Toast ============ */
 #toast {
   position: fixed;
